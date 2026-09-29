@@ -11,11 +11,15 @@ interface AuthContextValue {
   loading: boolean;
   login: (email: string, password: string) => Promise<User>;
   register: (fullName: string, email: string, password: string) => Promise<User>;
+  startGuest: () => Promise<User>;
   logout: () => void;
   setUser: (user: User) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+
+// Shared so a double-mounted effect (React StrictMode) creates one guest, not two.
+let guestRequest: ReturnType<typeof authApi.guest> | null = null;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -58,6 +62,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return data.user;
   }, []);
 
+  const startGuest = useCallback(async () => {
+    guestRequest ??= authApi.guest().finally(() => { guestRequest = null; });
+    const data = await guestRequest;
+    tokens.set(data.tokens);
+    setUser(data.user);
+    return data.user;
+  }, []);
+
   const logout = useCallback(() => {
     authApi.logout().catch(() => {});
     tokens.clear();
@@ -66,8 +78,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [queryClient]);
 
   const value = useMemo(
-    () => ({ user, loading, login, register, logout, setUser }),
-    [user, loading, login, register, logout],
+    () => ({ user, loading, login, register, startGuest, logout, setUser }),
+    [user, loading, login, register, startGuest, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

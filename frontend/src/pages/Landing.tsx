@@ -55,10 +55,7 @@ export default function Landing() {
             <span className="text-[15px] font-semibold tracking-tight text-ink">CreatorAI</span>
           </Link>
           <nav className="ml-auto flex items-center gap-1">
-            <Link to="/login" className="hidden sm:block">
-              <Button variant="ghost" size="sm">Sign in</Button>
-            </Link>
-            <Link to="/register">
+            <Link to="/app">
               <Button size="sm">Get started</Button>
             </Link>
           </nav>
@@ -77,9 +74,9 @@ export default function Landing() {
             <p className="text-[15px] leading-relaxed text-ink-muted">
               A multimodal studio that reads your media and writes what comes next.
             </p>
-            <Link to="/register" className="mt-5 inline-block">
+            <Link to="/app" className="mt-5 inline-block">
               <Button>
-                Start creating <ArrowRight className="h-4 w-4" />
+                Get started <ArrowRight className="h-4 w-4" />
               </Button>
             </Link>
           </div>
@@ -138,9 +135,9 @@ export default function Landing() {
           <h2 className="text-[clamp(2.25rem,5vw,4rem)] font-semibold leading-none tracking-[-0.04em] text-ink">
             Start with <span className="neon-text">one upload.</span>
           </h2>
-          <Link to="/register">
+          <Link to="/app">
             <Button size="lg">
-              Create free account <ArrowRight className="h-4 w-4" />
+              Get started <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
         </div>

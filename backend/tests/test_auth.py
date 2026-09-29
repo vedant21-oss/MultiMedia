@@ -131,3 +131,17 @@ def test_change_password_requires_the_current_one(client: TestClient, auth: dict
     assert client.post(
         "/api/auth/login", json={"email": "primary@devcrew.io", "password": "brandnew12"}
     ).status_code == 200
+
+
+def test_guest_gets_a_private_workspace(client: TestClient):
+    a = client.post("/api/auth/guest")
+    b = client.post("/api/auth/guest")
+    assert a.status_code == b.status_code == 201
+    ha = {"Authorization": f"Bearer {a.json()['tokens']['access_token']}"}
+    hb = {"Authorization": f"Bearer {b.json()['tokens']['access_token']}"}
+    assert a.json()["user"]["id"] != b.json()["user"]["id"]
+
+    project = client.post("/api/projects", json={"name": "Mine"}, headers=ha).json()
+    # Another guest can't see it.
+    assert client.get(f"/api/projects/{project['id']}", headers=hb).status_code == 404
+    assert client.get("/api/projects", headers=hb).json() == []

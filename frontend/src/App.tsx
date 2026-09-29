@@ -1,12 +1,11 @@
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, useEffect, useState } from 'react';
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { AppShell } from '@/components/layout/AppShell';
-import { Spinner } from '@/components/ui';
+import { Button, Spinner } from '@/components/ui';
+import { errorMessage } from '@/services/api';
 
 import Landing from '@/pages/Landing';
-import Login from '@/pages/Login';
-import Register from '@/pages/Register';
 import Dashboard from '@/pages/Dashboard';
 
 // Studio pages are split out so the first paint after login stays small.
@@ -32,16 +31,30 @@ function FullPageLoader({ label = 'Loading…' }: { label?: string }) {
   );
 }
 
+/** No sign-up wall: a first visit gets a private guest workspace automatically. */
 function Protected({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  if (loading) return <FullPageLoader label="Restoring your session…" />;
-  return user ? <>{children}</> : <Navigate to="/login" replace />;
-}
+  const { user, loading, startGuest } = useAuth();
+  const [error, setError] = useState('');
+  const [attempt, setAttempt] = useState(0);
 
-function PublicOnly({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-  if (loading) return <FullPageLoader />;
-  return user ? <Navigate to="/app" replace /> : <>{children}</>;
+  useEffect(() => {
+    if (loading || user) return;
+    setError('');
+    startGuest().catch((err) => setError(errorMessage(err, 'Could not reach the server')));
+  }, [loading, user, startGuest, attempt]);
+
+  if (user) return <>{children}</>;
+  if (error) {
+    return (
+      <div className="grid min-h-screen place-items-center px-4 text-center">
+        <div>
+          <p className="text-sm text-danger">{error}</p>
+          <Button className="mt-4" onClick={() => setAttempt((a) => a + 1)}>Try again</Button>
+        </div>
+      </div>
+    );
+  }
+  return <FullPageLoader label="Opening your studio…" />;
 }
 
 export default function App() {
@@ -49,8 +62,8 @@ export default function App() {
     <Suspense fallback={<FullPageLoader />}>
       <Routes>
         <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<PublicOnly><Login /></PublicOnly>} />
-        <Route path="/register" element={<PublicOnly><Register /></PublicOnly>} />
+        <Route path="/login" element={<Navigate to="/app" replace />} />
+        <Route path="/register" element={<Navigate to="/app" replace />} />
 
         <Route element={<Protected><AppShell /></Protected>}>
           <Route path="/app" element={<Dashboard />} />

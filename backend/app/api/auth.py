@@ -53,6 +53,30 @@ def register(payload: RegisterIn, db: DbSession):
     return AuthOut(user=UserOut.model_validate(user), tokens=_tokens(user))
 
 
+@router.post(
+    "/guest", response_model=AuthOut, status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(auth_limiter)],
+)
+def guest(db: DbSession):
+    """One-click start: a private workspace with no sign-up form.
+
+    Each guest is a real, isolated account with an unguessable address and a
+    random password, so every ownership check still applies.
+    """
+    import secrets
+
+    user = User(
+        email=f"guest-{secrets.token_hex(8)}@guest.creatorai.app",
+        full_name="Creator",
+        password_hash=hash_password(secrets.token_urlsafe(24)),
+    )
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    _audit(db, user.id, "user.guest")
+    return AuthOut(user=UserOut.model_validate(user), tokens=_tokens(user))
+
+
 @router.post("/login", response_model=AuthOut, dependencies=[Depends(auth_limiter)])
 def login(payload: LoginIn, db: DbSession):
     user = db.query(User).filter(User.email == payload.email.lower().strip()).first()

@@ -196,11 +196,13 @@ export function AppShell() {
               </div>
               <div className="hidden text-left leading-tight sm:block">
                 <div className="text-[13px] font-semibold text-ink">{user?.full_name}</div>
-                <div className="text-[11px] text-ink-faint">{user?.email}</div>
+                {!user?.email.endsWith('@guest.creatorai.app') && (
+                  <div className="text-[11px] text-ink-faint">{user?.email}</div>
+                )}
               </div>
             </Link>
 
-            <Button variant="ghost" size="icon" onClick={logout} aria-label="Sign out" title="Sign out">
+            <Button variant="ghost" size="icon" onClick={() => { logout(); navigate('/'); }} aria-label="Sign out" title="Sign out">
               <LogOut className="h-[18px] w-[18px]" />
             </Button>
           </div>

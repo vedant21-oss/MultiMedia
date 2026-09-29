@@ -9,6 +9,7 @@ import type {
 export const authApi = {
   register: (body: { full_name: string; email: string; password: string }) =>
     api.post<AuthResponse>('/auth/register', body).then((r) => r.data),
+  guest: () => api.post<AuthResponse>('/auth/guest').then((r) => r.data),
   login: (body: { email: string; password: string }) =>
     api.post<AuthResponse>('/auth/login', body).then((r) => r.data),
   me: () => api.get<User>('/auth/me').then((r) => r.data),
