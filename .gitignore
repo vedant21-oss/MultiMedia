@@ -29,3 +29,6 @@ backend/app.db
 .DS_Store
 .idea/
 .vscode/
+
+# Backend copied in at build time for the Vercel function
+frontend/api/_backend/

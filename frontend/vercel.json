@@ -1,0 +1,16 @@
+{
+  "framework": "vite",
+  "installCommand": "npm install --ignore-scripts",
+  "buildCommand": "npm run build && rm -rf api/_backend && mkdir -p api/_backend && cp -R ../backend/app api/_backend/app",
+  "outputDirectory": "dist",
+  "functions": {
+    "api/index.py": {
+      "maxDuration": 60,
+      "excludeFiles": "{node_modules/**,dist/**,src/**,public/**,**/__pycache__/**}"
+    }
+  },
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/index" },
+    { "source": "/((?!assets/).*)", "destination": "/index.html" }
+  ]
+}
