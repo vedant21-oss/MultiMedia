@@ -2,7 +2,7 @@
   "installCommand": "cd frontend && npm install --ignore-scripts",
   "buildCommand": "cd frontend && npm run build",
   "outputDirectory": "frontend/dist",
-  "framework": null,
+  "framework": "vite",
   "functions": {
     "api/index.py": {
       "maxDuration": 60,
