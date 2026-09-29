@@ -5,7 +5,7 @@
   "framework": null,
   "functions": {
     "api/index.py": {
-      "maxDuration": 300,
+      "maxDuration": 60,
       "excludeFiles": "{frontend/**,docs/**,backend/tests/**,backend/storage_data/**,backend/alembic/**,**/node_modules/**,**/__pycache__/**,**/.venv/**}",
       "includeFiles": "backend/app/**"
     }
