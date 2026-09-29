@@ -360,7 +360,7 @@ export function ProjectSelector({
 
 /* ------------------------------ Rich text ------------------------------- */
 
-const TOKEN = /(\[\[\d+\]\]|\*\*[^*]+\*\*|`[^`]+`)/g;
+const TOKEN = /(\[\[\d+(?:\s*,\s*\d+)*\]\]|\*\*[^*]+\*\*|`[^`]+`)/g;
 
 /**
  * Minimal markdown renderer for model output: paragraphs, lists, bold, code,
@@ -431,19 +431,19 @@ function Inline({ text, onCitation }: { text: string; onCitation?: (n: number) =
   return (
     <>
       {text.split(TOKEN).filter(Boolean).map((part, i) => {
-        const cite = part.match(/^\[\[(\d+)\]\]$/);
+        // Models sometimes group citations: [[1, 4, 5]] renders as three chips.
+        const cite = part.match(/^\[\[(\d+(?:\s*,\s*\d+)*)\]\]$/);
         if (cite) {
-          const marker = Number(cite[1]);
-          return (
+          return cite[1].split(',').map((n) => Number(n.trim())).map((marker) => (
             <button
-              key={i}
+              key={`${i}-${marker}`}
               onClick={() => onCitation?.(marker)}
               className="mx-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded border border-brand/40 bg-brand/12 px-1 align-super font-mono text-[9px] font-bold text-brand hover:bg-brand/25"
               title="Jump to the source"
             >
               {marker}
             </button>
-          );
+          ));
         }
         if (part.startsWith('**') && part.endsWith('**')) {
           return (

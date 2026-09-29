@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: creatorai-api
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL        # Supabase Session pooler URI (see docs/SUPABASE.md)
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-3.5-flash-lite
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ENV
+        value: production
+      - key: DEBUG
+        value: "false"
+      - key: CORS_ORIGINS
+        value: https://multi-media-seven.vercel.app

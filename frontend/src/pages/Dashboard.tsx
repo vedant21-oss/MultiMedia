@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
-  ArrowRight, Clock, FileStack, FolderPlus, Layers, MessageSquare, Plus, Sparkles,
+  ArrowRight, Clock, Wand2, FileStack, FolderPlus, Layers, MessageSquare, Plus, Sparkles,
   Trash2, Video,
 } from 'lucide-react';
 import { projectApi, studioApi } from '@/services/endpoints';
@@ -14,6 +14,7 @@ import {
   Badge, Button, Card, ConfirmDialog, Dialog, EmptyState, Input, Skeleton, Textarea,
 } from '@/components/ui';
 import { Hero3D } from '@/components/Hero3D';
+import { createSampleProject } from '@/lib/sampleProject';
 import { formatBytes, formatDuration, relativeTime } from '@/lib/format';
 import type { Project } from '@/types';
 
@@ -44,6 +45,18 @@ export default function Dashboard() {
     onError: (err) => toast.error(errorMessage(err, 'Could not create the project')),
   });
 
+  const sample = useMutation({
+    mutationFn: createSampleProject,
+    onSuccess: (project) => {
+      queryClient.invalidateQueries({ queryKey: ['projects'] });
+      queryClient.invalidateQueries({ queryKey: ['analytics'] });
+      setActiveProjectId(project.id);
+      toast.success('Sample project created. Processing 3 files now.');
+      navigate(`/app/projects/${project.id}`);
+    },
+    onError: (err) => toast.error(errorMessage(err, 'Could not create the sample project')),
+  });
+
   const deleteProject = useMutation({
     mutationFn: (id: string) => projectApi.remove(id),
     onSuccess: () => {
@@ -62,9 +75,18 @@ export default function Dashboard() {
     <div className="mx-auto max-w-7xl">
       {/* Hero — same language as the landing page */}
       <section className="relative mb-8 overflow-hidden rounded-2xl border border-line bg-surface-1">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-70"
+          style={{
+            background:
+              'radial-gradient(420px 260px at 88% 20%, rgb(var(--mod-video) / 0.22), transparent 70%),' +
+              'radial-gradient(360px 240px at 70% 95%, rgb(var(--mod-audio) / 0.16), transparent 70%),' +
+              'radial-gradient(380px 260px at 100% 85%, rgb(var(--mod-image) / 0.16), transparent 70%)',
+          }}
+        />
         <Hero3D className="pointer-events-none absolute -right-24 top-1/2 hidden h-[460px] w-[640px] -translate-y-1/2 md:block" />
         <div className="relative max-w-xl px-6 py-10 sm:px-10 sm:py-14">
-          <span className="font-mono text-[11px] text-ink-faint">{projects.length} projects · {totals?.segments ?? 0} indexed segments</span>
+          <span className="font-mono text-[11px] text-ink-faint">{projects.length} projects · {totals?.segments_indexed ?? 0} indexed segments</span>
           <h1 className="mt-3 text-[clamp(2.25rem,4.5vw,3.75rem)] font-semibold leading-[0.95] tracking-[-0.04em] text-ink">
             Hi {firstName}.
             <br />
@@ -74,25 +96,38 @@ export default function Dashboard() {
             <Button onClick={() => setCreating(true)}>
               <Plus className="h-4 w-4" /> New project
             </Button>
-            <Link to="/app/create">
-              <Button variant="secondary">
-                <Sparkles className="h-4 w-4" /> Create content
+            {projects.length === 0 ? (
+              <Button variant="secondary" onClick={() => sample.mutate()} loading={sample.isPending}>
+                <Wand2 className="h-4 w-4" /> Load sample project
               </Button>
-            </Link>
+            ) : (
+              <Link to="/app/create">
+                <Button variant="secondary">
+                  <Sparkles className="h-4 w-4" /> Create content
+                </Button>
+              </Link>
+            )}
+          </div>
+          <div className="mt-8 flex flex-wrap gap-x-4 gap-y-1.5 font-mono text-[11px] text-ink-muted">
+            <span className="flex items-center gap-1.5"><i className="h-1.5 w-1.5 rounded-full bg-mod-video" />video</span>
+            <span className="flex items-center gap-1.5"><i className="h-1.5 w-1.5 rounded-full bg-mod-audio" />audio</span>
+            <span className="flex items-center gap-1.5"><i className="h-1.5 w-1.5 rounded-full bg-mod-image" />image</span>
+            <span className="flex items-center gap-1.5"><i className="h-1.5 w-1.5 rounded-full bg-mod-doc" />documents</span>
           </div>
         </div>
       </section>
 
       {/* Feature buttons — 3D tilt */}
       <div className="mb-8 grid gap-4 sm:grid-cols-3" style={{ perspective: '1000px' }}>
-        <QuickAction n="01" to="/app/chat" icon={MessageSquare} title="Ask" body="Chat with your media. Every answer cites a second or a page." />
-        <QuickAction n="02" to="/app/video" icon={Video} title="Clip" body="Highlights, 9:16 reframing and burned-in subtitles." />
-        <QuickAction n="03" to="/app/create" icon={Sparkles} title="Write" body="Posts, scripts, blogs and quizzes in your brand voice." />
+        <QuickAction tone="video" n="01" to="/app/chat" icon={MessageSquare} title="Ask" body="Chat with your media. Every answer cites a second or a page." />
+        <QuickAction tone="audio" n="02" to="/app/video" icon={Video} title="Clip" body="Highlights, 9:16 reframing and burned-in subtitles." />
+        <QuickAction tone="image" n="03" to="/app/create" icon={Sparkles} title="Write" body="Posts, scripts, blogs and quizzes in your brand voice." />
       </div>
 
       {/* Stats */}
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
+          tone="doc"
           icon={FileStack}
           label="Sources uploaded"
           value={totals?.assets ?? 0}
@@ -100,6 +135,7 @@ export default function Dashboard() {
           loading={analytics.isLoading}
         />
         <StatCard
+          tone="video"
           icon={Video}
           label="Videos processed"
           value={totals?.videos_processed ?? 0}
@@ -111,6 +147,7 @@ export default function Dashboard() {
           loading={analytics.isLoading}
         />
         <StatCard
+          tone="audio"
           icon={Sparkles}
           label="Content generated"
           value={totals?.generated_content ?? 0}
@@ -118,6 +155,7 @@ export default function Dashboard() {
           loading={analytics.isLoading}
         />
         <StatCard
+          tone="image"
           icon={Layers}
           label="Searchable segments"
           value={totals?.segments_indexed ?? 0}
@@ -144,9 +182,14 @@ export default function Dashboard() {
           title="No projects yet"
           description="A project holds a set of related uploads — one video and its slides, or a whole podcast season. Everything inside it is searchable together."
           action={
-            <Button onClick={() => setCreating(true)}>
-              <Plus className="h-4 w-4" /> Create your first project
-            </Button>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button onClick={() => setCreating(true)}>
+                <Plus className="h-4 w-4" /> Create your first project
+              </Button>
+              <Button variant="secondary" onClick={() => sample.mutate()} loading={sample.isPending}>
+                <Wand2 className="h-4 w-4" /> Load sample project
+              </Button>
+            </div>
           }
         />
       ) : (
@@ -226,9 +269,20 @@ export default function Dashboard() {
   );
 }
 
+type Tone = 'video' | 'audio' | 'image' | 'doc';
+// Literal class names so Tailwind can see them.
+const TONE: Record<Tone, { text: string; bg: string; bar: string; rgb: string }> = {
+  video: { text: 'text-mod-video', bg: 'bg-mod-video', bar: 'bg-mod-video', rgb: '--mod-video' },
+  audio: { text: 'text-mod-audio', bg: 'bg-mod-audio', bar: 'bg-mod-audio', rgb: '--mod-audio' },
+  image: { text: 'text-mod-image', bg: 'bg-mod-image', bar: 'bg-mod-image', rgb: '--mod-image' },
+  doc: { text: 'text-mod-doc', bg: 'bg-mod-doc', bar: 'bg-mod-doc', rgb: '--mod-doc' },
+};
+
 function StatCard({
+  tone,
   icon: Icon, label, value, sub, loading,
 }: {
+  tone: Tone;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   value: number;
@@ -236,15 +290,16 @@ function StatCard({
   loading?: boolean;
 }) {
   return (
-    <Card className="p-4">
-      <div className="flex items-center gap-2 text-ink-faint">
-        <Icon className="h-4 w-4" />
-        <span className="text-[11px] font-semibold uppercase tracking-wider">{label}</span>
+    <Card className="relative overflow-hidden p-5">
+      <span className={`absolute inset-x-0 top-0 h-0.5 ${TONE[tone].bar}`} />
+      <div className="flex items-center gap-2 text-ink-muted">
+        <Icon className={`h-4 w-4 ${TONE[tone].text}`} />
+        <span className="text-[12px] font-medium">{label}</span>
       </div>
       {loading ? (
         <Skeleton className="mt-2 h-8 w-16" />
       ) : (
-        <div className="mt-1.5 text-2xl font-bold text-ink">{value.toLocaleString()}</div>
+        <div className="mt-2 text-3xl font-semibold tabular-nums tracking-tight text-ink">{value.toLocaleString()}</div>
       )}
       {sub && <div className="mt-0.5 text-[11px] text-ink-faint">{sub}</div>}
     </Card>
@@ -252,8 +307,9 @@ function StatCard({
 }
 
 function QuickAction({
-  n, to, icon: Icon, title, body,
+  tone, n, to, icon: Icon, title, body,
 }: {
+  tone: Tone;
   n: string;
   to: string;
   icon: React.ComponentType<{ className?: string }>;
@@ -281,11 +337,11 @@ function QuickAction({
       {/* light that follows the pointer */}
       <span
         className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-200 group-hover:opacity-100"
-        style={{ background: `radial-gradient(360px circle at ${tilt.mx}% ${tilt.my}%, rgb(var(--brand) / 0.14), transparent 60%)` }}
+        style={{ background: `radial-gradient(360px circle at ${tilt.mx}% ${tilt.my}%, rgb(var(${TONE[tone].rgb}) / 0.22), transparent 60%)` }}
       />
       <div className="flex items-start justify-between" style={{ transform: 'translateZ(40px)' }}>
-        <span className="font-mono text-xs text-brand">{n}</span>
-        <span className="grid h-11 w-11 place-items-center rounded-xl bg-ink text-surface-0 shadow-lg transition-transform duration-200 group-hover:-translate-y-1">
+        <span className={`font-mono text-xs ${TONE[tone].text}`}>{n}</span>
+        <span className={`grid h-11 w-11 place-items-center rounded-xl ${TONE[tone].bg} text-surface-0 shadow-lg transition-transform duration-200 group-hover:-translate-y-1`}>
           <Icon className="h-5 w-5" />
         </span>
       </div>

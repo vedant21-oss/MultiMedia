@@ -22,6 +22,11 @@
     --success: 74 222 128;
     --warning: 250 204 21;
     --danger: 248 113 113;
+    /* One colour per modality, used for data, not decoration. */
+    --mod-video: 167 139 250;
+    --mod-audio: 251 146 60;
+    --mod-image: 56 189 248;
+    --mod-doc: 212 255 79;
     color-scheme: dark;
   }
 
@@ -42,6 +47,10 @@
     --success: 5 150 90;
     --warning: 190 130 0;
     --danger: 210 30 70;
+    --mod-video: 124 58 237;
+    --mod-audio: 234 88 12;
+    --mod-image: 2 132 199;
+    --mod-doc: 77 124 15;
     color-scheme: light;
   }
 

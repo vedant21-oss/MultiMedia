@@ -28,6 +28,12 @@ export default {
         success: 'rgb(var(--success) / <alpha-value>)',
         warning: 'rgb(var(--warning) / <alpha-value>)',
         danger: 'rgb(var(--danger) / <alpha-value>)',
+        mod: {
+          video: 'rgb(var(--mod-video) / <alpha-value>)',
+          audio: 'rgb(var(--mod-audio) / <alpha-value>)',
+          image: 'rgb(var(--mod-image) / <alpha-value>)',
+          doc: 'rgb(var(--mod-doc) / <alpha-value>)',
+        },
       },
       fontFamily: {
         sans: ['Geist', 'Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'sans-serif'],
