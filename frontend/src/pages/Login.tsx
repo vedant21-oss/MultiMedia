@@ -3,7 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { AlertTriangle, Sparkles } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
+import { Hero3D } from '@/components/Hero3D';
+import { Logo } from './Landing';
 import { useAuth } from '@/hooks/useAuth';
 import { errorMessage, fieldErrors } from '@/services/api';
 import { Button, Input } from '@/components/ui';
@@ -89,12 +91,11 @@ export function AuthShell({
   children: ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen items-center justify-center px-4 py-10">
-      <div className="w-full max-w-sm">
+    <div className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-10">
+      <Hero3D className="pointer-events-none absolute left-1/2 top-1/2 h-[820px] w-[820px] -translate-x-1/2 -translate-y-1/2 opacity-40" />
+      <div className="relative w-full max-w-sm">
         <Link to="/" className="mb-8 flex items-center justify-center gap-2.5">
-          <div className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-brand to-accent">
-            <Sparkles className="h-5 w-5 text-white" strokeWidth={2.5} />
-          </div>
+          <Logo />
           <span className="text-lg font-extrabold tracking-tight text-ink">
             Creator<span className="text-brand">AI</span>
           </span>

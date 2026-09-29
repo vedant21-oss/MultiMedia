@@ -27,6 +27,11 @@ from app.db.base import Base  # noqa: E402
 from app.db.session import engine  # noqa: E402
 import app.models  # noqa: E402,F401  - registers tables
 from app.main import app  # noqa: E402
+from app.core.config import settings  # noqa: E402
+
+# The teardown drops every table. Refuse to run against anything but the
+# throwaway SQLite file, so a config change can never point it at real data.
+assert settings.DATABASE_URL.startswith("sqlite:///"), "tests must run on SQLite"
 
 
 @pytest.fixture(scope="session", autouse=True)

@@ -9,8 +9,9 @@ import { cn } from '@/lib/cn';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
 import { useCapabilities } from '@/hooks/useCapabilities';
-import { Badge, Button } from '@/components/ui';
+import { Button } from '@/components/ui';
 import { CommandSearch } from './CommandSearch';
+import { Logo } from '@/pages/Landing';
 
 const NAV = [
   { to: '/app', label: 'Dashboard', icon: LayoutDashboard, end: true },
@@ -70,7 +71,7 @@ export function AppShell() {
       {/* ---------- Sidebar ---------- */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-40 flex flex-col border-r border-line bg-surface-1/95 backdrop-blur-xl transition-all duration-200',
+          'fixed inset-y-0 left-0 z-40 flex flex-col border-r border-line bg-surface-0 transition-all duration-200',
           collapsed ? 'lg:w-[68px]' : 'lg:w-64',
           'w-64',
           mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
@@ -78,9 +79,9 @@ export function AppShell() {
       >
         <div className="flex h-16 items-center gap-2.5 border-b border-line px-4">
           <Link to="/app" className="flex items-center gap-2.5 overflow-hidden">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-brand to-accent">
-              <Sparkles className="h-4.5 w-4.5 text-white" strokeWidth={2.5} />
-            </div>
+            <span className="shrink-0">
+              <Logo />
+            </span>
             {!collapsed && (
               <span className="whitespace-nowrap text-[15px] font-extrabold tracking-tight text-ink">
                 Creator<span className="text-brand">AI</span>
@@ -105,9 +106,9 @@ export function AppShell() {
               title={collapsed ? item.label : undefined}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                  'flex items-center gap-3 rounded-md px-2.5 py-1.5 text-[13.5px] font-medium transition-colors',
                   isActive
-                    ? 'bg-brand/12 text-brand'
+                    ? 'bg-surface-2 text-ink'
                     : 'text-ink-muted hover:bg-surface-2 hover:text-ink',
                   collapsed && 'lg:justify-center lg:px-0',
                 )
@@ -118,22 +119,6 @@ export function AppShell() {
             </NavLink>
           ))}
         </nav>
-
-        {demoMode && !collapsed && (
-          <div className="mx-2.5 mb-2.5 rounded-lg border border-warning/30 bg-warning/[0.07] p-3">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-warning">Demo mode</p>
-            <p className="mt-1 text-[11px] leading-relaxed text-ink-muted">
-              No AI key configured. Extraction, OCR and video tools are live; generation is
-              extractive.
-            </p>
-            <Link
-              to="/app/settings"
-              className="mt-2 inline-block text-[11px] font-semibold text-warning hover:underline"
-            >
-              How to enable →
-            </Link>
-          </div>
-        )}
 
         <div className="hidden border-t border-line p-2.5 lg:block">
           <button
@@ -165,7 +150,7 @@ export function AppShell() {
 
       {/* ---------- Main column ---------- */}
       <div className={cn('flex min-w-0 flex-1 flex-col', collapsed ? 'lg:pl-[68px]' : 'lg:pl-64')}>
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line bg-surface-0/85 px-4 backdrop-blur-xl sm:px-6">
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line bg-surface-0/60 px-4 backdrop-blur-2xl sm:px-6">
           <button
             className="rounded-md p-2 text-ink-muted hover:bg-surface-2 hover:text-ink lg:hidden"
             onClick={() => setMobileOpen(true)}
@@ -187,9 +172,9 @@ export function AppShell() {
 
           <div className="ml-auto flex items-center gap-1.5">
             {demoMode && (
-              <Badge tone="warning" className="hidden sm:inline-flex">
-                Demo mode
-              </Badge>
+              <Link to="/app/settings" className="hidden items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-[12px] text-ink-muted hover:text-ink sm:inline-flex" title="No AI key set. Extraction, OCR and video tools are live.">
+                <span className="h-1.5 w-1.5 rounded-full bg-warning" /> Demo mode
+              </Link>
             )}
             <Button variant="ghost" size="icon" onClick={toggle} aria-label="Toggle theme">
               {theme === 'dark' ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}

@@ -1,63 +1,77 @@
-# CreatorAI — Multimodal AI Content Studio
+# CreatorAI — Your All-in-One Multimodal Content Studio
 
-CreatorAI is a unified multimodal content engine for creators, educators, and teams. Upload videos, audio recordings, images, presentations, and documents; CreatorAI normalizes them into searchable, citable segments and generates platform-ready content grounded directly in your sources.
+> **Upload once. Understand everything. Create content everywhere.**
 
----
+Built by **Dev Crew** for the Multimodal AI hackathon.
 
-## ⚡ Highlights
+## Problem
 
-- **Multimodal Ingestion**: Supports `.mp4`, `.mov`, `.mp3`, `.wav`, `.png`, `.jpg`, `.pdf`, `.docx`, `.pptx`, and `.txt`.
-- **Intelligent Segmentation & OCR**: Extracts audio transcripts, video keyframes, text OCR via Tesseract, and PDF/document pages into indexed content segments.
-- **Semantic Retrieval**: Uses pgvector cosine similarity search (with in-Python fallback for SQLite or lexical hashing in demo mode).
-- **Grounded AI Generation**: Summaries, social posts (X, LinkedIn, Instagram, TikTok, YouTube), show notes, newsletter blurbs, and chat with citation attribution.
-- **Demo Mode Out-of-the-Box**: Runs completely offline if no Gemini API key is provided, generating extractive responses and badging results clearly.
-- **Modern Responsive UI**: Built with React 18, Vite, TypeScript, Tailwind CSS, Lucide icons, Recharts, and TanStack Query.
+Creators, educators and marketing teams keep their raw material in many formats:
+a lecture video, its slide deck, a podcast recording, whiteboard photos, a PDF
+brief. Today's tools handle each format on its own. Turning that pile into
+platform-ready posts means hours of re-watching, transcribing and cross-referencing.
+AI writers that skip the material make up facts nobody can check.
 
----
+## Solution
 
-## 🛠 Tech Stack
+CreatorAI ingests **video, audio, images, PDFs, DOCX, PPTX, text and subtitles**. It
+normalises every format into one index of *segments*, each carrying provenance
+(timestamp, page, slide, frame). Content is then generated from that index, and
+every claim cites where it came from.
 
-- **Backend**: Python 3.12, FastAPI, SQLAlchemy 2.0, Alembic, Pydantic v2, PyJWT, OpenCV, FFmpeg, PyMuPDF, python-docx, python-pptx, PyTesseract
-- **Database**: PostgreSQL 16 + `pgvector` (or SQLite for testing/standalone)
-- **Frontend**: React 18, Vite, TypeScript, Tailwind CSS, TanStack Query v5, React Router v6, Sonner, Recharts
+- **Cross-modal fusion.** One question is answered from a video, a PDF and a photo
+  together, with `[1] [2] [3]` citations that jump to a timestamp or page.
+- **Grounded chat (RAG).** pgvector semantic search over all modalities. When the
+  sources don't cover something, it answers "not in your sources" instead of
+  guessing.
+- **Content studio.** Twenty content types (captions, YouTube titles and
+  descriptions, scripts, blogs, LinkedIn/X/TikTok posts, quizzes, flashcards, show
+  notes…) with tone, audience, language, brand voice and multiple variations. Every
+  output is editable and versioned, with restore.
+- **Video studio.** Scene detection (OpenCV), highlight suggestions, frame-accurate
+  clipping, 16:9 / 9:16 / 1:1 / 4:5 reframing, SRT/VTT export and subtitle burn-in
+  (FFmpeg).
+- **Thumbnail studio.** AI concepts composited onto real video frames.
+- **Library, planner and analytics.** Unified search, a monthly calendar, and
+  production charts.
+- **Honest by design.** Without an AI key the app runs in a clearly **badged demo
+  mode**. Extraction, OCR, scene detection, clipping and search still work for real.
+  It never claims a post was published or that a clip will go viral.
 
----
+## Tech stack
 
-## 🚀 Quick Start
+| Layer | Tech |
+|---|---|
+| Frontend | React 18 + TypeScript, Vite, Tailwind, TanStack Query, React Router, React Hook Form + Zod, Recharts, custom canvas 3D |
+| Backend | FastAPI, Pydantic v2, SQLAlchemy 2, Alembic, JWT access + refresh, bcrypt |
+| Database | PostgreSQL + **pgvector**, either local or **Supabase** ([guide](docs/SUPABASE.md)) |
+| AI | Google Gemini 2.5 Flash (multimodal understanding, generation), `gemini-embedding-001` |
+| Media | FFmpeg, OpenCV, PyMuPDF, python-docx, python-pptx, Tesseract OCR, Pillow |
 
-### 1. Database Setup (Postgres + pgvector)
+The AI key lives **only** in `backend/.env`. The browser never sees it.
 
-If running Docker:
+## Run it locally
+
+**Prerequisites:** Python 3.12, Node 20+, PostgreSQL 16/17 with pgvector (or a
+Supabase project), FFmpeg, Tesseract. On macOS:
+
 ```bash
-docker compose up -d
+brew install python@3.12 postgresql@17 pgvector ffmpeg tesseract
 ```
 
-Or ensure local PostgreSQL has `vector` extension:
-```sql
-CREATE DATABASE creatorai;
-CREATE EXTENSION IF NOT EXISTS vector;
-```
-
-### 2. Backend Setup
+**Backend** (port 8000):
 
 ```bash
 cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
-# Run migrations
-alembic upgrade head
-
-# Start API server
-uvicorn app.main:app --reload --port 8000
+python3.12 -m venv .venv && .venv/bin/pip install -r requirements.txt
+cp ../.env.example .env          # set DATABASE_URL, JWT_SECRET, GEMINI_API_KEY
+.venv/bin/alembic upgrade head
+.venv/bin/uvicorn app.main:app --reload --port 8000
 ```
 
-Backend endpoints:
-- API: `http://localhost:8000`
-- Interactive OpenAPI Docs: `http://localhost:8000/docs`
+API docs: <http://localhost:8000/docs>
 
-### 3. Frontend Setup
+**Frontend** (port 5173):
 
 ```bash
 cd frontend
@@ -65,36 +79,36 @@ npm install
 npm run dev
 ```
 
-Frontend runs on: `http://localhost:5173`
+Open <http://localhost:5173>.
 
----
+> ⚠️ If your shell exports `GEMINI_API_KEY`, it **overrides** `backend/.env`. The
+> app detects placeholder values like `YOUR_API_KEY` and falls back to demo mode
+> instead of failing every call.
 
-## 🧪 Testing
-
-To run the complete test suite (all 66 offline tests):
-
-```bash
-cd backend
-source .venv/bin/activate
-pytest tests/
-```
-
-To typecheck the frontend:
-```bash
-cd frontend
-npx tsc --noEmit
-```
-
-To build production frontend:
-```bash
-cd frontend
-npm run build
-```
-
----
-
-## 🏃 Run Both with Dev Script
+## Tests
 
 ```bash
-./scripts/dev.sh
+cd backend && .venv/bin/python -m pytest -q      # 66 tests
+cd frontend && npx tsc --noEmit && npm run build
 ```
+
+The tests cover auth, token refresh, validation, cross-user isolation (another
+user's data always returns 404), path traversal, upload dedup, range streaming, the
+full ingest-to-search pipeline, demo-mode honesty, malformed model JSON and
+prompt-injection guards.
+
+## Demo flow (first milestone)
+
+1. Register, then create a project.
+2. Upload a **video and a PDF**. You can watch them process live.
+3. **Create Content** → Instagram post → Generate. Each variation cites its source
+   segments.
+4. **AI Chat** → "Summarise everything". The answer cites both files.
+5. **Video Studio** → Suggest clips → export a 9:16 clip.
+6. **Dashboard / Analytics** show the output.
+
+## Status
+
+| Works now | Needs a key | Not built yet |
+|---|---|---|
+| Auth, projects, uploads, extraction, OCR, scenes, clipping, subtitles export, lexical search, extractive demo generation, library, planner, analytics | Transcription, vision descriptions, AI generation, semantic embeddings (`GEMINI_API_KEY`) | Direct social publishing (needs OAuth apps), image generation provider, Supabase Storage for media files |

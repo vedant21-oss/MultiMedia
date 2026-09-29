@@ -3,43 +3,45 @@
 @tailwind utilities;
 
 @layer base {
-  /* Dark is the default; .light flips every token. */
+  /* Neon-on-black. Every colour in the app comes from these tokens. */
   :root,
   .dark {
-    --surface-0: 8 8 20;
-    --surface-1: 14 14 30;
-    --surface-2: 21 21 41;
-    --surface-3: 31 30 56;
-    --line: 45 44 75;
-    --ink: 236 237 248;
-    --ink-muted: 156 158 186;
-    --ink-faint: 108 110 140;
-    --brand: 139 92 246;
-    --brand-soft: 45 33 84;
-    --brand-ink: 255 255 255;
-    --accent: 34 211 238;
-    --success: 52 211 153;
-    --warning: 251 191 36;
+    --surface-0: 9 9 11;
+    --surface-1: 17 17 19;
+    --surface-2: 24 24 27;
+    --surface-3: 39 39 42;
+    --line: 39 39 42;
+    --ink: 244 244 245;
+    --ink-muted: 161 161 170;
+    --ink-faint: 113 113 122;
+    --brand: 212 255 79;       /* one accent: acid lime */
+    --brand-soft: 40 48 16;
+    --brand-ink: 9 9 11;
+    --accent: 244 244 245;
+    --violet: 161 161 170;
+    --success: 74 222 128;
+    --warning: 250 204 21;
     --danger: 248 113 113;
     color-scheme: dark;
   }
 
   .light {
-    --surface-0: 249 250 253;
+    --surface-0: 247 248 252;
     --surface-1: 255 255 255;
-    --surface-2: 244 245 250;
-    --surface-3: 234 236 244;
-    --line: 220 222 234;
-    --ink: 22 24 40;
-    --ink-muted: 92 96 120;
-    --ink-faint: 138 142 166;
-    --brand: 124 58 237;
-    --brand-soft: 237 233 254;
+    --surface-2: 241 243 250;
+    --surface-3: 230 233 244;
+    --line: 218 221 236;
+    --ink: 14 14 32;
+    --ink-muted: 86 92 124;
+    --ink-faint: 134 140 170;
+    --brand: 77 124 15;
+    --brand-soft: 236 252 203;
     --brand-ink: 255 255 255;
-    --accent: 8 145 178;
-    --success: 5 150 105;
-    --warning: 217 119 6;
-    --danger: 220 38 38;
+    --accent: 24 24 27;
+    --violet: 82 82 91;
+    --success: 5 150 90;
+    --warning: 190 130 0;
+    --danger: 210 30 70;
     color-scheme: light;
   }
 
@@ -49,13 +51,14 @@
 
   body {
     @apply bg-surface-0 text-ink antialiased;
-    background-image:
-      radial-gradient(900px 480px at 8% -8%, rgb(var(--brand) / 0.10), transparent 60%),
-      radial-gradient(760px 420px at 100% 0%, rgb(var(--accent) / 0.07), transparent 55%);
-    background-attachment: fixed;
+    font-feature-settings: 'ss01', 'cv11';
+    letter-spacing: -0.006em;
   }
 
-  ::selection { @apply bg-brand/30 text-ink; }
+
+  #root { position: relative; z-index: 1; }
+
+  ::selection { background: rgb(var(--brand) / 0.28); color: rgb(var(--ink)); }
 
   :focus-visible {
     @apply outline-none ring-2 ring-brand ring-offset-2;
@@ -65,7 +68,7 @@
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: transparent; }
   ::-webkit-scrollbar-thumb { @apply rounded-full bg-surface-3; }
-  ::-webkit-scrollbar-thumb:hover { @apply bg-line; }
+  ::-webkit-scrollbar-thumb:hover { background: rgb(var(--ink-faint)); }
 
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
@@ -77,30 +80,44 @@
 }
 
 @layer components {
-  .card { @apply rounded-xl border border-line bg-surface-1/80 backdrop-blur-sm; }
+  /* Flat surface, hairline border. No gradients, no glow. */
+  .card {
+    @apply rounded-xl border border-line bg-surface-1;
+  }
 
-  .panel { @apply rounded-xl border border-line bg-surface-1; }
+  .light .card { box-shadow: 0 1px 2px rgb(0 0 0 / 0.04); }
 
-  .label { @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider text-ink-muted; }
+  .panel { @apply card; }
+
+  /* Neon edge that lights up on hover — used sparingly. */
+  .glow-hover { transition: border-color .15s ease; }
+  .glow-hover:hover { border-color: rgb(var(--ink-faint) / 0.6); }
+
+  /* Editorial serif accent for display words. */
+  .neon-text { font-family: 'Instrument Serif', Georgia, serif; font-style: italic; font-weight: 400; letter-spacing: -0.01em; }
+
+  .label { @apply mb-1.5 block text-[12px] font-medium text-ink-muted; }
 
   .input {
-    @apply w-full rounded-lg border border-line bg-surface-2 px-3.5 py-2.5 text-sm text-ink
-           placeholder:text-ink-faint transition-colors focus:border-brand;
+    @apply w-full rounded-lg border px-3 py-2 text-sm text-ink placeholder:text-ink-faint
+           transition-colors;
+    background: rgb(var(--surface-1));
+    border-color: rgb(var(--line));
   }
+
+  .light .input { background: rgb(var(--surface-1)); border-color: rgb(var(--line)); }
+
+  .input:focus { box-shadow: 0 0 0 3px rgb(var(--ink) / 0.06); border-color: rgb(var(--ink-faint)); }
 
   .chip {
     @apply inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-semibold;
   }
 
-  .skeleton { @apply relative overflow-hidden rounded-md bg-surface-2; }
+  .skeleton { @apply relative overflow-hidden rounded-xl bg-surface-2; }
   .skeleton::after {
     content: '';
     @apply absolute inset-0 -translate-x-full;
-    background: linear-gradient(90deg, transparent, rgb(var(--surface-3) / 0.8), transparent);
+    background: linear-gradient(90deg, transparent, rgb(var(--ink) / 0.04), transparent);
     animation: shimmer 1.6s infinite;
-  }
-
-  .scroll-fade {
-    mask-image: linear-gradient(to bottom, transparent, black 12px, black calc(100% - 12px), transparent);
   }
 }

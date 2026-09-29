@@ -4,13 +4,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import {
   ArrowRight, Clock, FileStack, FolderPlus, Layers, MessageSquare, Plus, Sparkles,
-  Trash2, Video, Zap,
+  Trash2, Video,
 } from 'lucide-react';
 import { projectApi, studioApi } from '@/services/endpoints';
 import { errorMessage } from '@/services/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useProjectContext } from '@/hooks/useProjectContext';
-import { useCapabilities } from '@/hooks/useCapabilities';
 import {
   Badge, Button, Card, ConfirmDialog, Dialog, EmptyState, Input, Skeleton, Textarea,
 } from '@/components/ui';
@@ -24,7 +23,6 @@ export default function Dashboard() {
   const [pendingDelete, setPendingDelete] = useState<Project | null>(null);
   const { user } = useAuth();
   const { projects, loading, setActiveProjectId } = useProjectContext();
-  const { data: caps } = useCapabilities();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -78,22 +76,6 @@ export default function Dashboard() {
           </>
         }
       />
-
-      {caps && caps.ai_mode !== 'live' && (
-        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-warning/30 bg-warning/[0.06] px-4 py-3">
-          <Zap className="h-4 w-4 shrink-0 text-warning" />
-          <p className="flex-1 text-[13px] leading-relaxed text-ink-muted">
-            <span className="font-semibold text-warning">Demo mode.</span> Text extraction, OCR,
-            scene detection, clipping and subtitles all work. Transcription and AI generation need a
-            Gemini key.
-          </p>
-          <Link to="/app/settings">
-            <Button size="sm" variant="secondary">
-              Enable AI
-            </Button>
-          </Link>
-        </div>
-      )}
 
       {/* Stats */}
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -3,6 +3,7 @@ import {
 } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { projectApi } from '@/services/endpoints';
+import { useAuth } from '@/hooks/useAuth';
 import type { Project } from '@/types';
 
 const KEY = 'creatorai.activeProject';
@@ -27,9 +28,14 @@ export function ProjectProvider({ children }: { children: ReactNode }) {
     () => localStorage.getItem(KEY),
   );
 
+  const { user } = useAuth();
+
+  // Only fetch once signed in. An unauthenticated call 401s, and the auth
+  // interceptor would then bounce a logged-out visitor off the landing page.
   const { data, isLoading, refetch } = useQuery({
-    queryKey: ['projects'],
+    queryKey: ['projects', user?.id],
     queryFn: projectApi.list,
+    enabled: !!user,
   });
 
   const projects = useMemo(() => data ?? [], [data]);

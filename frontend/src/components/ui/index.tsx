@@ -16,8 +16,8 @@ const buttonStyles = cva(
   {
     variants: {
       variant: {
-        primary: 'bg-brand text-brand-ink hover:bg-brand/88 shadow-sm shadow-brand/25',
-        secondary: 'border border-line bg-surface-2 text-ink hover:bg-surface-3',
+        primary: 'bg-ink text-surface-0 hover:bg-ink/85',
+        secondary: 'border border-line bg-surface-1 text-ink hover:bg-surface-2',
         ghost: 'text-ink-muted hover:bg-surface-2 hover:text-ink',
         danger: 'border border-danger/40 bg-danger/10 text-danger hover:bg-danger/20',
         outline: 'border border-brand/50 text-brand hover:bg-brand/10',

@@ -1,320 +1,166 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  ArrowRight, BarChart3, Check, FileText, Image as ImageIcon, Layers, MessageSquare,
-  Mic, Quote, Scissors, Sparkles, Video,
-} from 'lucide-react';
-import { Badge, Button } from '@/components/ui';
+import { ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui';
+import { Hero3D } from '@/components/Hero3D';
 
-const PIPELINE = [
-  {
-    icon: Layers,
-    title: 'Upload anything',
-    body: 'Video, audio, images, PDFs, slide decks, documents. One drop zone, ten files at a time.',
-  },
-  {
-    icon: FileText,
-    title: 'Understand everything',
-    body: 'Transcripts with timestamps, OCR on scans and screenshots, scene detection, page-level document parsing — all normalised into one searchable representation.',
-  },
-  {
-    icon: Sparkles,
-    title: 'Fuse across formats',
-    body: 'Ask one question and get an answer drawn from a video, a PDF and a photo together — each claim cited back to a timestamp or a page number.',
-  },
-  {
-    icon: Scissors,
-    title: 'Create everywhere',
-    body: 'Captions, scripts, blogs, quizzes, vertical clips with burned-in subtitles, thumbnails. Every output editable, versioned and traceable to its source.',
-  },
+const STORY = [
+  { lead: 'Video. Audio. Slides. Photos.', tail: 'Drop them in one place.' },
+  { lead: 'Understood together.', tail: 'Speech, pages and frames in one index.' },
+  { lead: 'Turned into content.', tail: 'Every line cites its source.' },
 ];
 
 const FEATURES = [
-  { icon: Video, title: 'Video Studio', body: 'Scene detection, highlight suggestions, frame-accurate trimming, 9:16 / 1:1 / 4:5 reframing, and subtitle burn-in via FFmpeg.' },
-  { icon: Mic, title: 'Audio & Podcast', body: 'Timestamped transcripts, chapter markers, show notes, SRT and VTT export, clip suggestions.' },
-  { icon: ImageIcon, title: 'Image Studio', body: 'Vision descriptions, OCR text extraction, accessibility alt text, and thumbnail composition over real video frames.' },
-  { icon: FileText, title: 'Document Studio', body: 'PDF, DOCX and PPTX parsing with page and slide numbers preserved, plus OCR fallback for scans.' },
-  { icon: MessageSquare, title: 'Grounded AI chat', body: 'RAG over your own uploads. Cites its sources, and says "I don’t know" instead of inventing an answer.' },
-  { icon: BarChart3, title: 'Production analytics', body: 'What you made, how long it took, what failed. Clearly separated from platform engagement metrics.' },
+  { n: '01', title: 'Ask', body: 'Chat with your media. Answers cite the exact second or page.' },
+  { n: '02', title: 'Clip', body: 'Find highlights, reframe to 9:16, burn in subtitles.' },
+  { n: '03', title: 'Write', body: 'Posts, scripts and threads in your brand voice.' },
 ];
 
-const USE_CASES = [
-  { who: 'YouTubers', what: 'Turn one long upload into a title, a description with chapters, a thumbnail and five vertical clips.' },
-  { who: 'Podcasters', what: 'Transcript, show notes, chapter markers, audiogram-ready highlights and a blog post from one recording.' },
-  { who: 'Educators', what: 'Turn a lecture recording and its slide deck into study notes, a quiz and flashcards, with page references intact.' },
-  { who: 'Agencies', what: 'Brand voice profiles keep every client’s output on-tone, with version history on every draft.' },
-];
+/** 0 → 1 as the element scrolls through the viewport while pinned. */
+function useScrollProgress<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    const onScroll = () => {
+      const el = ref.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const span = r.height - window.innerHeight;
+      setProgress(Math.min(1, Math.max(0, -r.top / (span || 1))));
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, []);
+  return { ref, progress };
+}
 
 export default function Landing() {
-  return (
-    <div className="min-h-screen">
-      <header className="sticky top-0 z-30 border-b border-line bg-surface-0/80 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 max-w-6xl items-center px-4 sm:px-6">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-brand to-accent">
-              <Sparkles className="h-[18px] w-[18px] text-white" strokeWidth={2.5} />
-            </div>
-            <span className="text-[15px] font-extrabold tracking-tight text-ink">
-              Creator<span className="text-brand">AI</span>
-            </span>
-          </Link>
+  const story = useScrollProgress<HTMLElement>();
+  const active = Math.min(STORY.length - 1, Math.floor(story.progress * STORY.length));
 
-          <nav className="ml-auto flex items-center gap-2">
-            <Link to="/login">
-              <Button variant="ghost">Sign in</Button>
+  return (
+    <div className="relative min-h-screen overflow-x-hidden">
+      {/* The 3D scene stays fixed behind the first two screens. */}
+      <Hero3D scrollFusion className="pointer-events-none fixed inset-0 h-full w-full" />
+
+      <header className="fixed inset-x-0 top-0 z-30">
+        <div className="mx-auto flex h-16 max-w-6xl items-center px-5 sm:px-8">
+          <Link to="/" className="flex items-center gap-2.5">
+            <Logo />
+            <span className="text-[15px] font-semibold tracking-tight text-ink">CreatorAI</span>
+          </Link>
+          <nav className="ml-auto flex items-center gap-1">
+            <Link to="/login" className="hidden sm:block">
+              <Button variant="ghost" size="sm">Sign in</Button>
             </Link>
             <Link to="/register">
-              <Button>Get started free</Button>
+              <Button size="sm">Get started</Button>
             </Link>
           </nav>
         </div>
       </header>
 
-      {/* Hero */}
-      <section className="mx-auto max-w-5xl px-4 pb-16 pt-16 text-center sm:px-6 sm:pt-24">
-        <Badge tone="brand" className="mb-5">
-          <Sparkles className="h-3 w-3" />
-          Multimodal AI content studio
-        </Badge>
+      {/* 1 — Hero */}
+      <section className="relative flex min-h-[100svh] items-end">
+        <div className="mx-auto grid w-full max-w-6xl gap-8 px-5 pb-14 sm:px-8 md:grid-cols-[1fr_auto] md:items-end md:pb-20">
+          <h1 className="animate-fade-up text-[clamp(3rem,9vw,7.5rem)] font-semibold leading-[0.9] tracking-[-0.045em] text-ink">
+            Upload once.
+            <br />
+            <span className="neon-text tracking-[-0.02em]">Create everywhere.</span>
+          </h1>
+          <div className="max-w-xs animate-fade-up md:pb-3">
+            <p className="text-[15px] leading-relaxed text-ink-muted">
+              A multimodal studio that reads your media and writes what comes next.
+            </p>
+            <Link to="/register" className="mt-5 inline-block">
+              <Button>
+                Start creating <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+        <span className="absolute bottom-5 left-1/2 -translate-x-1/2 font-mono text-[11px] text-ink-faint">
+          scroll
+        </span>
+      </section>
 
-        <h1 className="text-4xl font-extrabold leading-[1.08] tracking-tight text-ink sm:text-6xl">
-          Upload once.
-          <br />
-          <span className="bg-gradient-to-r from-brand to-accent bg-clip-text text-transparent">
-            Create content everywhere.
-          </span>
-        </h1>
+      {/* 2 — Scroll story: the bodies fuse while three lines play */}
+      <section ref={story.ref} className="relative h-[300vh]">
+        <div className="sticky top-0 flex h-screen items-center">
+          <div className="mx-auto w-full max-w-6xl px-5 sm:px-8">
+            <div className="relative h-40">
+              {STORY.map((s, i) => (
+                <div
+                  key={s.lead}
+                  className="absolute inset-0 transition-all duration-500 ease-out"
+                  style={{
+                    opacity: i === active ? 1 : 0,
+                    transform: `translateY(${(i - active) * 24}px)`,
+                  }}
+                >
+                  <p className="text-[clamp(2rem,5vw,4rem)] font-semibold leading-none tracking-[-0.035em] text-ink">
+                    {s.lead}
+                  </p>
+                  <p className="mt-4 text-lg text-ink-muted">{s.tail}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-10 flex gap-1.5">
+              {STORY.map((s, i) => (
+                <span
+                  key={s.lead}
+                  className={`h-0.5 w-8 rounded-full transition-colors ${i <= active ? 'bg-brand' : 'bg-line'}`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
 
-        <p className="mx-auto mt-6 max-w-2xl text-base leading-relaxed text-ink-muted sm:text-lg">
-          CreatorAI reads your video, audio, images and documents together — then writes the
-          captions, scripts, articles and clips that come out of them. Every sentence it generates
-          traces back to the timestamp or page it came from.
-        </p>
+      {/* 3 — What you get */}
+      <section className="relative z-10 border-t border-line bg-surface-0">
+        <div className="mx-auto grid max-w-6xl gap-px px-5 py-24 sm:px-8 md:grid-cols-3">
+          {FEATURES.map((f) => (
+            <div key={f.n} className="py-6 md:pr-10">
+              <span className="font-mono text-xs text-brand">{f.n}</span>
+              <h3 className="mt-3 text-2xl font-semibold tracking-tight text-ink">{f.title}</h3>
+              <p className="mt-2 text-[15px] leading-relaxed text-ink-muted">{f.body}</p>
+            </div>
+          ))}
+        </div>
 
-        <div className="mt-9 flex flex-wrap justify-center gap-3">
+        <div className="mx-auto flex max-w-6xl flex-col items-start gap-6 border-t border-line px-5 py-24 sm:px-8 md:flex-row md:items-end md:justify-between">
+          <h2 className="text-[clamp(2.25rem,5vw,4rem)] font-semibold leading-none tracking-[-0.04em] text-ink">
+            Start with <span className="neon-text">one upload.</span>
+          </h2>
           <Link to="/register">
             <Button size="lg">
-              Start creating <ArrowRight className="h-4 w-4" />
-            </Button>
-          </Link>
-          <Link to="/login">
-            <Button size="lg" variant="secondary">
-              Sign in
+              Create free account <ArrowRight className="h-4 w-4" />
             </Button>
           </Link>
         </div>
 
-        <p className="mt-4 text-xs text-ink-faint">
-          Free to run locally. Works without an AI key in a clearly-labelled demo mode.
-        </p>
-
-        <HeroPreview />
-      </section>
-
-      {/* Pipeline */}
-      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
-        <h2 className="mb-2 text-center text-sm font-bold uppercase tracking-widest text-ink-faint">
-          How it works
-        </h2>
-        <p className="mx-auto mb-10 max-w-xl text-center text-sm text-ink-muted">
-          The interesting part is step three: information from different formats is combined, not
-          just stored side by side.
-        </p>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {PIPELINE.map((step, i) => (
-            <div key={step.title} className="card p-5">
-              <div className="mb-3 flex items-center justify-between">
-                <div className="grid h-10 w-10 place-items-center rounded-lg bg-brand/12 text-brand">
-                  <step.icon className="h-5 w-5" />
-                </div>
-                <span className="font-mono text-xs text-ink-faint">0{i + 1}</span>
-              </div>
-              <h3 className="text-sm font-semibold text-ink">{step.title}</h3>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-ink-muted">{step.body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Features */}
-      <section className="mx-auto max-w-6xl px-4 pb-20 sm:px-6">
-        <h2 className="mb-10 text-center text-sm font-bold uppercase tracking-widest text-ink-faint">
-          Every studio you need
-        </h2>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURES.map((f) => (
-            <div key={f.title} className="card p-5 transition-colors hover:border-brand/40">
-              <f.icon className="h-5 w-5 text-brand" />
-              <h3 className="mt-3 text-sm font-semibold text-ink">{f.title}</h3>
-              <p className="mt-1.5 text-[13px] leading-relaxed text-ink-muted">{f.body}</p>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Use cases */}
-      <section className="mx-auto max-w-5xl px-4 pb-20 sm:px-6">
-        <div className="card p-7 sm:p-9">
-          <h2 className="text-xl font-bold text-ink sm:text-2xl">Built for people who publish</h2>
-          <div className="mt-7 grid gap-6 sm:grid-cols-2">
-            {USE_CASES.map((c) => (
-              <div key={c.who}>
-                <h3 className="text-sm font-semibold text-brand">{c.who}</h3>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-ink-muted">{c.what}</p>
-              </div>
-            ))}
+        <footer className="border-t border-line">
+          <div className="mx-auto flex max-w-6xl items-center justify-between px-5 py-6 text-xs text-ink-faint sm:px-8">
+            <span>CreatorAI · Dev Crew</span>
+            <span className="font-mono">video · audio · image · docs</span>
           </div>
-        </div>
+        </footer>
       </section>
-
-      {/* Honesty section — unusual, and the point */}
-      <section className="mx-auto max-w-5xl px-4 pb-20 sm:px-6">
-        <div className="card border-brand/25 p-7 sm:p-9">
-          <Quote className="h-6 w-6 text-brand" />
-          <h2 className="mt-3 text-xl font-bold text-ink">What it will not do</h2>
-          <ul className="mt-5 grid gap-3 sm:grid-cols-2">
-            {[
-              'Invent a statistic your sources never mentioned.',
-              'Claim a clip will go viral — it has no performance data.',
-              'Say a post was published when no platform is connected.',
-              'Pass off demo output as a real model response.',
-            ].map((item) => (
-              <li key={item} className="flex gap-2.5 text-[13px] leading-relaxed text-ink-muted">
-                <Check className="mt-0.5 h-4 w-4 shrink-0 text-success" />
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section className="mx-auto max-w-5xl px-4 pb-24 sm:px-6">
-        <h2 className="mb-10 text-center text-sm font-bold uppercase tracking-widest text-ink-faint">
-          Pricing
-        </h2>
-        <div className="grid gap-4 md:grid-cols-3">
-          {[
-            {
-              name: 'Self-hosted',
-              price: 'Free',
-              sub: 'Run it yourself',
-              features: ['Unlimited projects', 'All studios', 'Bring your own AI key', 'Full source code'],
-              cta: 'Get started',
-              highlight: true,
-            },
-            {
-              name: 'Creator',
-              price: '$19',
-              sub: 'per month',
-              features: ['Hosted and managed', '50 GB media storage', 'Priority processing queue', 'Email support'],
-              cta: 'Coming soon',
-              disabled: true,
-            },
-            {
-              name: 'Team',
-              price: '$79',
-              sub: 'per month',
-              features: ['Everything in Creator', 'Shared brand voices', 'Team workspaces', 'Publishing integrations'],
-              cta: 'Coming soon',
-              disabled: true,
-            },
-          ].map((tier) => (
-            <div
-              key={tier.name}
-              className={`card flex flex-col p-6 ${tier.highlight ? 'border-brand/50 ring-1 ring-brand/20' : ''}`}
-            >
-              <h3 className="text-sm font-semibold text-ink">{tier.name}</h3>
-              <div className="mt-3 flex items-baseline gap-1.5">
-                <span className="text-3xl font-extrabold text-ink">{tier.price}</span>
-                <span className="text-xs text-ink-faint">{tier.sub}</span>
-              </div>
-              <ul className="mt-5 flex-1 space-y-2.5">
-                {tier.features.map((f) => (
-                  <li key={f} className="flex gap-2 text-[13px] text-ink-muted">
-                    <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />
-                    {f}
-                  </li>
-                ))}
-              </ul>
-              {tier.disabled ? (
-                <Button variant="secondary" className="mt-6" disabled>
-                  {tier.cta}
-                </Button>
-              ) : (
-                <Link to="/register" className="mt-6">
-                  <Button className="w-full">{tier.cta}</Button>
-                </Link>
-              )}
-            </div>
-          ))}
-        </div>
-        <p className="mt-4 text-center text-xs text-ink-faint">
-          Hosted plans are not live yet. Those buttons are disabled rather than pretending to work.
-        </p>
-      </section>
-
-      <footer className="border-t border-line px-4 py-8 text-center text-xs text-ink-faint">
-        CreatorAI — a multimodal AI content studio. Built with React, FastAPI, PostgreSQL + pgvector,
-        FFmpeg and Google Gemini.
-      </footer>
     </div>
   );
 }
 
-/** A static illustration of cross-modal fusion: one answer, three formats. */
-function HeroPreview() {
+export function Logo({ small }: { small?: boolean }) {
+  const size = small ? 'h-6 w-6' : 'h-7 w-7';
   return (
-    <div className="mx-auto mt-16 max-w-3xl text-left">
-      <div className="card overflow-hidden">
-        <div className="flex items-center gap-2 border-b border-line px-4 py-3">
-          <MessageSquare className="h-4 w-4 text-brand" />
-          <span className="text-sm font-medium text-ink">
-            “Summarise the lecture and pull the key numbers.”
-          </span>
-        </div>
-
-        <div className="space-y-3 p-4">
-          <p className="text-[13px] leading-relaxed text-ink-muted">
-            Validation accuracy peaked at{' '}
-            <span className="font-semibold text-ink">91.2% after 12 epochs</span>
-            <Cite n={1} /> before overfitting set in. The recommended fix on the slides is dropout at{' '}
-            <span className="font-semibold text-ink">0.5 for fully connected layers</span>
-            <Cite n={2} />, which the speaker demonstrates on screen
-            <Cite n={3} />.
-          </p>
-
-          <div className="grid gap-2 sm:grid-cols-3">
-            {[
-              { n: 1, icon: FileText, name: 'lecture-notes.pdf', where: 'page 3' },
-              { n: 2, icon: ImageIcon, name: 'slide-photo.jpg', where: 'OCR' },
-              { n: 3, icon: Video, name: 'lecture-04.mp4', where: '14:22' },
-            ].map((s) => (
-              <div key={s.n} className="flex items-center gap-2 rounded-lg border border-line bg-surface-2 px-2.5 py-2">
-                <span className="grid h-4 w-4 shrink-0 place-items-center rounded border border-brand/40 bg-brand/12 font-mono text-[9px] font-bold text-brand">
-                  {s.n}
-                </span>
-                <s.icon className="h-3.5 w-3.5 shrink-0 text-ink-faint" />
-                <div className="min-w-0">
-                  <div className="truncate text-[11px] font-medium text-ink">{s.name}</div>
-                  <div className="font-mono text-[10px] text-ink-faint">{s.where}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <p className="mt-3 text-center text-[11px] text-ink-faint">
-        One answer, assembled from a document, a photo and a video — each claim traceable.
-      </p>
-    </div>
-  );
-}
-
-function Cite({ n }: { n: number }) {
-  return (
-    <sup className="mx-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded border border-brand/40 bg-brand/12 px-1 font-mono text-[9px] font-bold text-brand">
-      {n}
-    </sup>
+    <span className={`${size} grid place-items-center rounded-md bg-ink`}>
+      <span className={`${small ? 'h-2 w-2' : 'h-2.5 w-2.5'} rounded-full bg-brand`} />
+    </span>
   );
 }

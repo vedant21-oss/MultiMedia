@@ -35,7 +35,7 @@ class Settings(BaseSettings):
 
     # --- AI providers (backend only - never sent to the browser) ---
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "gemini-2.5-flash"
+    GEMINI_MODEL: str = "gemini-3.8-flash"
     GEMINI_EMBED_MODEL: str = "gemini-embedding-001"
     EMBED_DIMENSIONS: int = 768
 
@@ -46,7 +46,7 @@ class Settings(BaseSettings):
 
     # Image generation: "none" | "gemini" | "openai"
     IMAGE_PROVIDER: str = "none"
-    GEMINI_IMAGE_MODEL: str = "gemini-2.5-flash-image"
+    GEMINI_IMAGE_MODEL: str = "gemini-3.1-flash-image"
     OPENAI_IMAGE_MODEL: str = "gpt-image-1"
 
     # --- Storage ---
@@ -59,6 +59,30 @@ class Settings(BaseSettings):
     VIDEO_FRAME_SAMPLES: int = 12
     MAX_TRANSCRIPT_CHARS: int = 200_000
     JOB_CONCURRENCY: int = 2
+
+    @field_validator("GEMINI_API_KEY", mode="after")
+    @classmethod
+    def _placeholder_key_falls_back_to_dotenv(cls, v: str) -> str:
+        # A shell profile exporting GEMINI_API_KEY=YOUR_API_KEY would otherwise
+        # hide the real key in backend/.env. Only a non-empty placeholder falls
+        # back; an explicit empty value (as the tests set) still means demo mode.
+        if not v or cls._is_real_key(v):
+            return v
+        from dotenv import dotenv_values
+
+        return (dotenv_values(BASE_DIR / ".env").get("GEMINI_API_KEY") or v).strip()
+
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def _normalise_db_url(cls, v: str) -> str:
+        """Supabase, Heroku and Render hand out `postgres://` URLs, which
+        SQLAlchemy 2 refuses. Rewrite them to the explicit psycopg2 dialect."""
+        v = (v or "").strip()
+        if v.startswith("postgres://"):
+            v = "postgresql+psycopg2://" + v[len("postgres://"):]
+        elif v.startswith("postgresql://"):
+            v = "postgresql+psycopg2://" + v[len("postgresql://"):]
+        return v
 
     @field_validator("STORAGE_DIR", mode="before")
     @classmethod
