@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Node
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Storage & generated media
+backend/storage_data/*
+!backend/storage_data/.gitkeep
+backend/app.db
+*.log
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/

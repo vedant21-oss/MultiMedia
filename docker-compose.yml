@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: creatorai-postgres
+    restart: always
+    environment:
+      POSTGRES_USER: creatorai
+      POSTGRES_PASSWORD: creatorai
+      POSTGRES_DB: creatorai
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+volumes:
+  pgdata:

@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* Dark is the default; .light flips every token. */
+  :root,
+  .dark {
+    --surface-0: 8 8 20;
+    --surface-1: 14 14 30;
+    --surface-2: 21 21 41;
+    --surface-3: 31 30 56;
+    --line: 45 44 75;
+    --ink: 236 237 248;
+    --ink-muted: 156 158 186;
+    --ink-faint: 108 110 140;
+    --brand: 139 92 246;
+    --brand-soft: 45 33 84;
+    --brand-ink: 255 255 255;
+    --accent: 34 211 238;
+    --success: 52 211 153;
+    --warning: 251 191 36;
+    --danger: 248 113 113;
+    color-scheme: dark;
+  }
+
+  .light {
+    --surface-0: 249 250 253;
+    --surface-1: 255 255 255;
+    --surface-2: 244 245 250;
+    --surface-3: 234 236 244;
+    --line: 220 222 234;
+    --ink: 22 24 40;
+    --ink-muted: 92 96 120;
+    --ink-faint: 138 142 166;
+    --brand: 124 58 237;
+    --brand-soft: 237 233 254;
+    --brand-ink: 255 255 255;
+    --accent: 8 145 178;
+    --success: 5 150 105;
+    --warning: 217 119 6;
+    --danger: 220 38 38;
+    color-scheme: light;
+  }
+
+  * { @apply border-line; }
+
+  html, body, #root { height: 100%; }
+
+  body {
+    @apply bg-surface-0 text-ink antialiased;
+    background-image:
+      radial-gradient(900px 480px at 8% -8%, rgb(var(--brand) / 0.10), transparent 60%),
+      radial-gradient(760px 420px at 100% 0%, rgb(var(--accent) / 0.07), transparent 55%);
+    background-attachment: fixed;
+  }
+
+  ::selection { @apply bg-brand/30 text-ink; }
+
+  :focus-visible {
+    @apply outline-none ring-2 ring-brand ring-offset-2;
+    --tw-ring-offset-color: rgb(var(--surface-0));
+  }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { @apply rounded-full bg-surface-3; }
+  ::-webkit-scrollbar-thumb:hover { @apply bg-line; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: .01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .card { @apply rounded-xl border border-line bg-surface-1/80 backdrop-blur-sm; }
+
+  .panel { @apply rounded-xl border border-line bg-surface-1; }
+
+  .label { @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider text-ink-muted; }
+
+  .input {
+    @apply w-full rounded-lg border border-line bg-surface-2 px-3.5 py-2.5 text-sm text-ink
+           placeholder:text-ink-faint transition-colors focus:border-brand;
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-[11px] font-semibold;
+  }
+
+  .skeleton { @apply relative overflow-hidden rounded-md bg-surface-2; }
+  .skeleton::after {
+    content: '';
+    @apply absolute inset-0 -translate-x-full;
+    background: linear-gradient(90deg, transparent, rgb(var(--surface-3) / 0.8), transparent);
+    animation: shimmer 1.6s infinite;
+  }
+
+  .scroll-fade {
+    mask-image: linear-gradient(to bottom, transparent, black 12px, black calc(100% - 12px), transparent);
+  }
+}
