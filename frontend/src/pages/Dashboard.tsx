@@ -13,7 +13,7 @@ import { useProjectContext } from '@/hooks/useProjectContext';
 import {
   Badge, Button, Card, ConfirmDialog, Dialog, EmptyState, Input, Skeleton, Textarea,
 } from '@/components/ui';
-import { PageHeader } from '@/components/shared';
+import { Hero3D } from '@/components/Hero3D';
 import { formatBytes, formatDuration, relativeTime } from '@/lib/format';
 import type { Project } from '@/types';
 
@@ -60,22 +60,35 @@ export default function Dashboard() {
 
   return (
     <div className="mx-auto max-w-7xl">
-      <PageHeader
-        title={`Welcome back, ${firstName}`}
-        subtitle="Upload media into a project, then turn it into content for any platform."
-        actions={
-          <>
+      {/* Hero — same language as the landing page */}
+      <section className="relative mb-8 overflow-hidden rounded-2xl border border-line bg-surface-1">
+        <Hero3D className="pointer-events-none absolute -right-24 top-1/2 hidden h-[460px] w-[640px] -translate-y-1/2 md:block" />
+        <div className="relative max-w-xl px-6 py-10 sm:px-10 sm:py-14">
+          <span className="font-mono text-[11px] text-ink-faint">{projects.length} projects · {totals?.segments ?? 0} indexed segments</span>
+          <h1 className="mt-3 text-[clamp(2.25rem,4.5vw,3.75rem)] font-semibold leading-[0.95] tracking-[-0.04em] text-ink">
+            Hi {firstName}.
+            <br />
+            <span className="neon-text">What are we making?</span>
+          </h1>
+          <div className="mt-7 flex flex-wrap gap-2">
+            <Button onClick={() => setCreating(true)}>
+              <Plus className="h-4 w-4" /> New project
+            </Button>
             <Link to="/app/create">
               <Button variant="secondary">
                 <Sparkles className="h-4 w-4" /> Create content
               </Button>
             </Link>
-            <Button onClick={() => setCreating(true)}>
-              <Plus className="h-4 w-4" /> New project
-            </Button>
-          </>
-        }
-      />
+          </div>
+        </div>
+      </section>
+
+      {/* Feature buttons — 3D tilt */}
+      <div className="mb-8 grid gap-4 sm:grid-cols-3" style={{ perspective: '1000px' }}>
+        <QuickAction n="01" to="/app/chat" icon={MessageSquare} title="Ask" body="Chat with your media. Every answer cites a second or a page." />
+        <QuickAction n="02" to="/app/video" icon={Video} title="Clip" body="Highlights, 9:16 reframing and burned-in subtitles." />
+        <QuickAction n="03" to="/app/create" icon={Sparkles} title="Write" body="Posts, scripts, blogs and quizzes in your brand voice." />
+      </div>
 
       {/* Stats */}
       <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -110,28 +123,6 @@ export default function Dashboard() {
           value={totals?.segments_indexed ?? 0}
           sub={totals ? `${formatBytes(totals.storage_used_bytes)} stored` : undefined}
           loading={analytics.isLoading}
-        />
-      </div>
-
-      {/* Quick actions */}
-      <div className="mb-8 grid gap-3 sm:grid-cols-3">
-        <QuickAction
-          to="/app/create"
-          icon={Sparkles}
-          title="Create content"
-          body="Captions, scripts, blogs and quizzes from your uploads."
-        />
-        <QuickAction
-          to="/app/chat"
-          icon={MessageSquare}
-          title="Ask your media"
-          body="Grounded answers with citations to timestamps and pages."
-        />
-        <QuickAction
-          to="/app/video"
-          icon={Video}
-          title="Cut clips"
-          body="Highlights, vertical reframing and burned-in subtitles."
         />
       </div>
 
@@ -261,26 +252,52 @@ function StatCard({
 }
 
 function QuickAction({
-  to, icon: Icon, title, body,
+  n, to, icon: Icon, title, body,
 }: {
+  n: string;
   to: string;
   icon: React.ComponentType<{ className?: string }>;
   title: string;
   body: string;
 }) {
+  const [tilt, setTilt] = useState({ x: 0, y: 0, mx: 50, my: 50, on: false });
+  const onMove = (e: React.PointerEvent<HTMLAnchorElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width;
+    const py = (e.clientY - r.top) / r.height;
+    setTilt({ x: (0.5 - py) * 14, y: (px - 0.5) * 18, mx: px * 100, my: py * 100, on: true });
+  };
   return (
     <Link
       to={to}
-      className="card group flex items-start gap-3 p-4 transition-colors hover:border-brand/45"
+      onPointerMove={onMove}
+      onPointerLeave={() => setTilt({ x: 0, y: 0, mx: 50, my: 50, on: false })}
+      className="group relative block rounded-2xl border border-line bg-surface-1 p-6 transition-[transform,box-shadow] duration-200 ease-out hover:shadow-[0_30px_60px_-30px_rgb(0_0_0/0.45)]"
+      style={{
+        transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y}deg) translateZ(${tilt.on ? 12 : 0}px)`,
+        transformStyle: 'preserve-3d',
+      }}
     >
-      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-brand/12 text-brand">
-        <Icon className="h-4 w-4" />
+      {/* light that follows the pointer */}
+      <span
+        className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+        style={{ background: `radial-gradient(360px circle at ${tilt.mx}% ${tilt.my}%, rgb(var(--brand) / 0.14), transparent 60%)` }}
+      />
+      <div className="flex items-start justify-between" style={{ transform: 'translateZ(40px)' }}>
+        <span className="font-mono text-xs text-brand">{n}</span>
+        <span className="grid h-11 w-11 place-items-center rounded-xl bg-ink text-surface-0 shadow-lg transition-transform duration-200 group-hover:-translate-y-1">
+          <Icon className="h-5 w-5" />
+        </span>
       </div>
-      <div className="min-w-0 flex-1">
-        <h3 className="text-sm font-semibold text-ink">{title}</h3>
-        <p className="mt-0.5 text-[12px] leading-relaxed text-ink-muted">{body}</p>
-      </div>
-      <ArrowRight className="h-4 w-4 shrink-0 text-ink-faint transition-transform group-hover:translate-x-0.5 group-hover:text-brand" />
+      <h3 className="mt-6 text-2xl font-semibold tracking-tight text-ink" style={{ transform: 'translateZ(30px)' }}>
+        {title}
+      </h3>
+      <p className="mt-1.5 text-[13px] leading-relaxed text-ink-muted" style={{ transform: 'translateZ(20px)' }}>
+        {body}
+      </p>
+      <span className="mt-5 inline-flex items-center gap-1.5 text-[13px] font-medium text-ink" style={{ transform: 'translateZ(25px)' }}>
+        Open <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+      </span>
     </Link>
   );
 }
