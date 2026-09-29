@@ -8,6 +8,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 
 # Serverless defaults. Anything set in Vercel's Environment Variables wins.
 os.environ.setdefault("STORAGE_DIR", "/tmp/creatorai-storage")  # only /tmp is writable
+# Works before a database is attached, but /tmp is per-instance and can reset.
+# Connect Neon/Supabase (sets DATABASE_URL) for data that persists.
+os.environ.setdefault("DATABASE_URL", "sqlite:////tmp/creatorai.db")
 os.environ.setdefault("RUN_JOBS_INLINE", "true")   # no background work after responding
 os.environ.setdefault("AUTO_CREATE_TABLES", "true")
 os.environ.setdefault("ENV", "production")

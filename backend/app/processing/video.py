@@ -5,8 +5,20 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-import cv2
 import numpy as np
+
+try:
+    import cv2
+except ImportError:  # the Vercel build leaves OpenCV out to fit the function size limit
+    cv2 = None
+
+
+def _require_cv2() -> None:
+    if cv2 is None:
+        raise RuntimeError(
+            "Video analysis isn't available on this deployment (OpenCV not installed). "
+            "Run the Docker or local backend for video."
+        )
 
 log = logging.getLogger(__name__)
 
@@ -30,6 +42,7 @@ class Scene:
 
 
 def _histogram(frame: np.ndarray) -> np.ndarray:
+    _require_cv2()
     """Normalised HSV histogram — robust to small motion, sensitive to cuts."""
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     hist = cv2.calcHist([hsv], [0, 1], None, [50, 60], [0, 180, 0, 256])
@@ -51,6 +64,7 @@ def detect_scenes(
     catches all of them with no false positives, and is stable up to 0.95).
     different scenes. Sampling at 2 fps keeps a 20-minute video fast.
     """
+    _require_cv2()
     capture = cv2.VideoCapture(str(path))
     if not capture.isOpened():
         raise ValueError(f"OpenCV could not open the video: {path.name}")
@@ -97,6 +111,7 @@ def extract_frames(
 ) -> list[Frame]:
     """Save `count` evenly spaced frames, or frames at the given timestamps."""
     dest_dir.mkdir(parents=True, exist_ok=True)
+    _require_cv2()
     capture = cv2.VideoCapture(str(path))
     if not capture.isOpened():
         raise ValueError(f"OpenCV could not open the video: {path.name}")

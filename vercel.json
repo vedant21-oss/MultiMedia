@@ -4,10 +4,20 @@
   "outputDirectory": "frontend/dist",
   "framework": null,
   "functions": {
-    "api/index.py": { "maxDuration": 300, "includeFiles": "backend/app/**" }
+    "api/index.py": {
+      "maxDuration": 300,
+      "excludeFiles": "{frontend/**,docs/**,backend/tests/**,backend/storage_data/**,backend/alembic/**,**/node_modules/**,**/__pycache__/**,**/.venv/**}",
+      "includeFiles": "backend/app/**"
+    }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/index" },
-    { "source": "/((?!assets/).*)", "destination": "/index.html" }
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/((?!assets/).*)",
+      "destination": "/index.html"
+    }
   ]
 }

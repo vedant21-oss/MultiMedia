@@ -1,5 +1,7 @@
 # Production dependencies for the Vercel function (api/index.py).
 # Local development and tests use backend/requirements.txt.
+# OpenCV is left out (about 150 MB) to fit Vercel's function size limit;
+# Vercel has no FFmpeg either, so video analysis needs the Docker/local backend.
 fastapi==0.115.6
 python-multipart==0.0.20
 pydantic==2.10.4
@@ -16,6 +18,5 @@ PyMuPDF==1.25.1
 python-docx==1.1.2
 python-pptx==1.0.2
 Pillow==11.0.0
-opencv-python-headless==4.10.0.84
 numpy==2.1.3
 pytesseract==0.3.13
