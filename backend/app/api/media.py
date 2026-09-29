@@ -189,6 +189,10 @@ async def upload_media(
         job_ids.append(job.id)
         jobs.submit(job.id, _ingest_handler)
 
+    if settings.RUN_JOBS_INLINE and created:
+        await jobs.drain()
+        db.expire_all()
+
     if not created and skipped:
         raise AppError(
             "; ".join(f"{s['filename']}: {s['reason']}" for s in skipped), 400, "upload_rejected"

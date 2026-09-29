@@ -1,0 +1,21 @@
+# Production dependencies for the Vercel function (api/index.py).
+# Local development and tests use backend/requirements.txt.
+fastapi==0.115.6
+python-multipart==0.0.20
+pydantic==2.10.4
+pydantic-settings==2.7.1
+email-validator==2.2.0
+SQLAlchemy==2.0.36
+psycopg2-binary==2.9.10
+pgvector==0.3.6
+PyJWT==2.10.1
+bcrypt==4.2.1
+httpx==0.28.1
+python-dotenv==1.2.3
+PyMuPDF==1.25.1
+python-docx==1.1.2
+python-pptx==1.0.2
+Pillow==11.0.0
+opencv-python-headless==4.10.0.84
+numpy==2.1.3
+pytesseract==0.3.13

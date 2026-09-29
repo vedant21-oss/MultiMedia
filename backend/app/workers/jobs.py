@@ -59,6 +59,17 @@ def submit(job_id: str, handler: JobHandler) -> None:
 
     Safe to call from both async endpoints and sync (threadpool) endpoints.
     """
+    if settings.RUN_JOBS_INLINE:
+        # Serverless hosts (Vercel) freeze the process once the response is
+        # sent, so a background task would never finish. A sync endpoint runs
+        # in a worker thread with no loop: finish the job right here. An async
+        # caller schedules it and must `await drain()` before responding.
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            asyncio.run(_run(job_id, handler))
+            return
+
     def schedule() -> None:
         task = asyncio.ensure_future(_run(job_id, handler))
         _tasks.add(task)
@@ -78,46 +89,62 @@ def submit(job_id: str, handler: JobHandler) -> None:
 
 
 async def _run(job_id: str, handler: JobHandler) -> None:
+    if settings.RUN_JOBS_INLINE:
+        # Serverless: one job per request, and the semaphore may belong to
+        # another event loop.
+        await _execute(job_id, handler)
+        return
     async with _sem():
-        db = SessionLocal()
+        await _execute(job_id, handler)
+
+
+async def _execute(job_id: str, handler: JobHandler) -> None:
+    db = SessionLocal()
+    try:
+        job = db.get(ProcessingJob, job_id)
+        if job is None or job.status == JobStatus.CANCELLED:
+            return
+
+        job.status = JobStatus.RUNNING
+        job.attempts += 1
+        job.started_at = datetime.now(timezone.utc)
+        job.error = ""
+        db.commit()
+
         try:
+            await handler(job)
             job = db.get(ProcessingJob, job_id)
-            if job is None or job.status == JobStatus.CANCELLED:
-                return
+            if job and job.status != JobStatus.CANCELLED:
+                job.status = JobStatus.SUCCEEDED
+                job.progress = 100
+                job.step = "Done"
+                job.finished_at = datetime.now(timezone.utc)
+                db.commit()
+        except Exception as exc:  # noqa: BLE001 - a failed job must never kill the worker
+            log.error("Job %s failed: %s\n%s", job_id, exc, traceback.format_exc())
+            db.rollback()
+            job = db.get(ProcessingJob, job_id)
+            if job:
+                job.status = JobStatus.FAILED
+                job.error = f"{type(exc).__name__}: {exc}"[:1000]
+                job.finished_at = datetime.now(timezone.utc)
+                db.commit()
+                if job.asset_id:
+                    asset = db.get(MediaAsset, job.asset_id)
+                    if asset:
+                        asset.status = AssetStatus.FAILED
+                        asset.status_message = "Processing failed"
+                        asset.error = job.error
+                        db.commit()
+    finally:
+        db.close()
 
-            job.status = JobStatus.RUNNING
-            job.attempts += 1
-            job.started_at = datetime.now(timezone.utc)
-            job.error = ""
-            db.commit()
 
-            try:
-                await handler(job)
-                job = db.get(ProcessingJob, job_id)
-                if job and job.status != JobStatus.CANCELLED:
-                    job.status = JobStatus.SUCCEEDED
-                    job.progress = 100
-                    job.step = "Done"
-                    job.finished_at = datetime.now(timezone.utc)
-                    db.commit()
-            except Exception as exc:  # noqa: BLE001 - a failed job must never kill the worker
-                log.error("Job %s failed: %s\n%s", job_id, exc, traceback.format_exc())
-                db.rollback()
-                job = db.get(ProcessingJob, job_id)
-                if job:
-                    job.status = JobStatus.FAILED
-                    job.error = f"{type(exc).__name__}: {exc}"[:1000]
-                    job.finished_at = datetime.now(timezone.utc)
-                    db.commit()
-                    if job.asset_id:
-                        asset = db.get(MediaAsset, job.asset_id)
-                        if asset:
-                            asset.status = AssetStatus.FAILED
-                            asset.status_message = "Processing failed"
-                            asset.error = job.error
-                            db.commit()
-        finally:
-            db.close()
+async def drain() -> None:
+    """Wait for every scheduled job. Used in inline (serverless) mode."""
+    pending = [t for t in _tasks if not t.done()]
+    if pending:
+        await asyncio.gather(*pending, return_exceptions=True)
 
 
 async def shutdown(timeout: float = 5.0) -> None:

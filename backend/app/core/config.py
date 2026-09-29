@@ -53,6 +53,10 @@ class Settings(BaseSettings):
     STORAGE_BACKEND: str = "local"
     STORAGE_DIR: Path = BASE_DIR / "storage_data"
     MAX_UPLOAD_MB: int = 500
+    # Serverless hosts (Vercel) can't run background work after responding.
+    RUN_JOBS_INLINE: bool = False
+    # Create tables on startup when migrations can't be run as a separate step.
+    AUTO_CREATE_TABLES: bool = False
     USER_QUOTA_MB: int = 2048
 
     # --- Processing ---
