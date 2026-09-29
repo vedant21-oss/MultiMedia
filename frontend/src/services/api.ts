@@ -61,8 +61,8 @@ api.interceptors.response.use(
         original.headers.Authorization = `Bearer ${fresh}`;
         return api(original);
       }
-      if (window.location.pathname !== '/') {
-        window.location.assign('/');
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.assign('/login');
       }
     }
     return Promise.reject(error);

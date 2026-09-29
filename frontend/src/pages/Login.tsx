@@ -105,8 +105,39 @@ export function AuthShell({
           <h1 className="text-xl font-bold text-ink">{title}</h1>
           <p className="mb-6 mt-1 text-sm text-ink-muted">{subtitle}</p>
           {children}
+          <GuestButton />
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Lets a judge or first-time visitor try the studio without signing up. */
+function GuestButton() {
+  const { startGuest } = useAuth();
+  const navigate = useNavigate();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  const start = async () => {
+    setBusy(true);
+    setError('');
+    try {
+      await startGuest();
+      navigate('/app', { replace: true });
+    } catch (err) {
+      setError(errorMessage(err, 'Could not start a guest session'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="mt-5 border-t border-line pt-5">
+      <Button type="button" variant="secondary" className="w-full" onClick={start} loading={busy}>
+        Continue as guest
+      </Button>
+      {error && <p className="mt-2 text-center text-xs text-danger">{error}</p>}
     </div>
   );
 }
