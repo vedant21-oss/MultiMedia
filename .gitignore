@@ -32,3 +32,6 @@ backend/app.db
 
 # Backend copied in at build time for the Vercel function
 frontend/api/_backend/
+
+.vercel
+.env*

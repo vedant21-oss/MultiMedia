@@ -258,3 +258,18 @@ def test_capabilities_endpoint_reports_demo_mode_honestly(client: TestClient):
     assert caps["features"]["subtitle_export"]["available"] is True
     # Publishing is never claimed.
     assert caps["features"]["social_publishing"]["available"] is False
+
+
+def test_gemini_3_never_sends_a_zero_thinking_budget():
+    """Gemini 3 rejects `thinkingBudget: 0` with a 400, which used to make every
+    upload fall back to demo analysis even with a key configured."""
+    from app.ai.gemini import _thinking_config
+
+    for model in ("gemini-3.5-flash-lite", "gemini-3.8-flash"):
+        assert _thinking_config(model, 0) is None
+        assert _thinking_config(model, 512) == {"thinkingBudget": 512}
+
+    # 2.5 accepts 0, and it is cheaper, so keep sending it there.
+    assert _thinking_config("gemini-2.5-flash", 0) == {"thinkingBudget": 0}
+    # Older models reject thinkingConfig entirely.
+    assert _thinking_config("gemini-1.5-flash", 512) is None

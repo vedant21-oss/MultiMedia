@@ -36,6 +36,9 @@ log = logging.getLogger(__name__)
 # instead of uploading the whole file.
 DIRECT_VIDEO_LIMIT_SEC = 15 * 60
 TRANSCRIPT_WINDOW_SEC = 30.0
+# Without FFmpeg the whole file goes to the model, so keep it small enough to
+# upload and cheap enough to analyse.
+NO_FFMPEG_MAX_BYTES = 40 * 1024 * 1024
 
 
 @dataclass(slots=True)
@@ -172,7 +175,56 @@ def _embedding_text(asset: MediaAsset, seg: ContentSegment) -> str:
 # Video
 # --------------------------------------------------------------------------- #
 
+async def _ingest_av_direct(asset, source: Path, step) -> tuple[list[PendingSegment], Any]:
+    """Video/audio on a host without FFmpeg (e.g. Vercel).
+
+    Gemini reads video and audio natively, so the file goes straight to the
+    model. Scene cuts, keyframes, clipping and thumbnails all need FFmpeg and
+    stay unavailable here — the asset says so rather than pretending.
+    """
+    kind = "video" if asset.modality == Modality.VIDEO else "audio"
+    size = source.stat().st_size
+
+    if not registry.is_live():
+        raise ff.MediaToolError(
+            f"{kind.capitalize()} needs either FFmpeg or an AI key, and this deployment has "
+            "neither. Run the backend locally (or in Docker) for full media processing."
+        )
+    if size > NO_FFMPEG_MAX_BYTES:
+        raise ff.MediaToolError(
+            f"This deployment has no FFmpeg, so {kind} is sent whole to the AI model and is "
+            f"limited to {NO_FFMPEG_MAX_BYTES // (1024 * 1024)} MB. "
+            "Run the backend locally for longer files."
+        )
+
+    step(35, f"Understanding {kind} with AI…")
+    parts = [
+        await registry.part_for_file(source, asset.mime_type, asset.original_filename),
+        {"text": (
+            f"FILE: {asset.original_filename}\n"
+            "The duration is unknown; read it from the media itself and timestamp every "
+            "segment in seconds from the start.\n\n"
+            f"Analyse this {kind} and return the required JSON."
+        )},
+    ]
+    result = await registry.run_template(
+        UNDERSTANDING_BY_MODALITY[kind], parts,
+        demo_fallback=lambda: _demo_av_result(asset, [], 0.0),
+    )
+
+    segments = _segments_from_av(result.data, [], get_storage())
+    # No ffprobe, so the duration comes from the last timestamped segment.
+    ends = [s.end_sec for s in segments if s.end_sec]
+    if ends:
+        asset.duration_sec = max(ends)
+    asset.extra = {**(asset.extra or {}), "media": {"ffmpeg": False, "analysis": "direct"}}
+    return segments, result
+
+
 async def _ingest_video(asset, source: Path, work_dir: Path, step) -> tuple[list[PendingSegment], Any]:
+    if not ff.ffmpeg_available():
+        return await _ingest_av_direct(asset, source, step)
+
     step(10, "Probing video…")
     info = ff.media_info(source)
     asset.duration_sec = info.get("duration_sec")
@@ -351,6 +403,9 @@ def _merge_windows(raw: list[dict], target_sec: float) -> list[dict]:
 # --------------------------------------------------------------------------- #
 
 async def _ingest_audio(asset, source: Path, work_dir: Path, step) -> tuple[list[PendingSegment], Any]:
+    if not ff.ffmpeg_available():
+        return await _ingest_av_direct(asset, source, step)
+
     step(15, "Probing audio…")
     info = ff.media_info(source)
     asset.duration_sec = info.get("duration_sec")

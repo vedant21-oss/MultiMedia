@@ -40,6 +40,21 @@ def _supports_thinking(model: str) -> bool:
     return bool(re.search(r"gemini-(2\.5|3)", model))
 
 
+def _thinking_config(model: str, budget: int | None) -> dict | None:
+    """The thinkingConfig to send, or None to leave it out.
+
+    Gemini 3 models cannot switch thinking off: `thinkingBudget: 0` comes back
+    as 400 "Request contains an invalid argument". Omitting the config lets the
+    model use its own (small) default. On 2.5 models 0 is valid and cheaper, so
+    it is still sent there.
+    """
+    if budget is None or not _supports_thinking(model):
+        return None
+    if budget == 0 and re.search(r"gemini-3", model):
+        return None
+    return {"thinkingBudget": budget}
+
+
 class GeminiClient:
     def __init__(self, timeout: float = 300.0) -> None:
         self._timeout = timeout
@@ -195,8 +210,9 @@ class GeminiClient:
             generation_config["responseSchema"] = schema
         # Thinking tokens come out of the same output budget; unbounded thinking
         # can consume it entirely and return an empty candidate.
-        if thinking_budget is not None and _supports_thinking(model):
-            generation_config["thinkingConfig"] = {"thinkingBudget": thinking_budget}
+        thinking = _thinking_config(model, thinking_budget)
+        if thinking is not None:
+            generation_config["thinkingConfig"] = thinking
 
         body: dict[str, Any] = {
             "contents": [{"role": "user", "parts": parts}],
