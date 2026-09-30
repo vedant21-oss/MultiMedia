@@ -13,3 +13,18 @@ export function useCapabilities() {
     retry: 1,
   });
 }
+
+/**
+ * What one named feature can do on THIS deployment, e.g. `video_clipping`.
+ * Vercel has no FFmpeg or Tesseract, so the UI disables those actions and
+ * says what is missing instead of letting a click fail.
+ */
+export function useFeature(name: string) {
+  const { data } = useCapabilities();
+  const feature = data?.features?.[name];
+  return {
+    available: feature?.available ?? true,   // assume yes until we know better
+    needs: feature?.needs ?? null,
+    maxUploadMb: data?.limits?.max_upload_mb,
+  };
+}

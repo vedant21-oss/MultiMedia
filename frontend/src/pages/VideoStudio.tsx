@@ -15,6 +15,7 @@ import {
 import { CapabilityNote, PageHeader, ProjectSelector } from '@/components/shared';
 import { formatDuration, timecode } from '@/lib/format';
 import { cn } from '@/lib/cn';
+import { useFeature } from '@/hooks/useCapabilities';
 import type { Highlight, Job } from '@/types';
 
 const ASPECTS = [
@@ -30,6 +31,7 @@ export default function VideoStudio() {
   const { projects, activeProjectId, setActiveProjectId } = useProjectContext();
   const [selectedId, setSelectedId] = useState<string | null>(mediaId ?? null);
   const navigate = useNavigate();
+
 
   const assets = useQuery({
     queryKey: ['media', activeProjectId],
@@ -109,6 +111,11 @@ export default function VideoStudio() {
 }
 
 function StudioWorkspace({ mediaId }: { mediaId: string }) {
+  // FFmpeg is absent on serverless hosts, so clipping and scene work may be off.
+  const clipping = useFeature('video_clipping');
+  const scenes = useFeature('scene_detection');
+  const burnIn = useFeature('subtitle_burn_in');
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const [range, setRange] = useState({ start: 0, end: 15 });
   const [aspect, setAspect] = useState('9:16');
@@ -224,7 +231,16 @@ function StudioWorkspace({ mediaId }: { mediaId: string }) {
           </div>
         </Card>
 
-        {segments.data?.note && <CapabilityNote needs="GEMINI_API_KEY" mode="scene detection only" />}
+        {!scenes.available && (
+          <CapabilityNote
+            needs={scenes.needs ?? 'ffmpeg'}
+            mode="playback and AI analysis only"
+            hint="this hosting has no FFmpeg, so scene cuts, frames and clipping are unavailable here. Run the backend locally or in Docker for the full video studio."
+          />
+        )}
+        {scenes.available && segments.data?.note && (
+          <CapabilityNote needs="GEMINI_API_KEY" mode="scene detection only" />
+        )}
 
         {/* Scene strip */}
         {(segments.data?.frames.length ?? 0) > 0 && (
@@ -413,24 +429,33 @@ function StudioWorkspace({ mediaId }: { mediaId: string }) {
               <input
                 type="checkbox"
                 checked={burn}
-                disabled={!segments.data?.has_transcript}
+                disabled={!segments.data?.has_transcript || !burnIn.available}
                 onChange={(e) => setBurn(e.target.checked)}
                 className="h-3.5 w-3.5 accent-[rgb(var(--brand))]"
               />
               <span className="text-[12px] text-ink">Burn in subtitles</span>
-              {!segments.data?.has_transcript && (
+              {!burnIn.available ? (
+                <span className="ml-auto text-[10px] text-warning">needs {burnIn.needs ?? 'ffmpeg'}</span>
+              ) : !segments.data?.has_transcript ? (
                 <span className="ml-auto text-[10px] text-warning">needs transcript</span>
-              )}
+              ) : null}
             </label>
 
             <Button
               className="w-full"
               onClick={() => clip.mutate()}
               loading={clip.isPending}
-              disabled={range.end <= range.start}
+              disabled={range.end <= range.start || !clipping.available}
+              title={clipping.available ? undefined : `Clipping needs ${clipping.needs ?? 'ffmpeg'}`}
             >
               <Clapperboard className="h-4 w-4" /> Export clip
             </Button>
+            {!clipping.available && (
+              <p className="text-center text-[11px] leading-relaxed text-ink-faint">
+                Clipping needs {clipping.needs ?? 'ffmpeg'}, which this hosting doesn't provide.
+                It works when you run the backend locally.
+              </p>
+            )}
           </div>
 
           {job.data && job.data.status !== 'succeeded' && (

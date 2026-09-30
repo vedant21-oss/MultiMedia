@@ -8,6 +8,7 @@ import { cn } from '@/lib/cn';
 import { formatBytes, formatDuration, locatorLabel, relativeTime } from '@/lib/format';
 import { Badge, Button, Progress } from '@/components/ui';
 import { mediaUrl } from '@/services/api';
+import { useCapabilities } from '@/hooks/useCapabilities';
 import type { Asset, Citation, Project } from '@/types';
 
 /* --------------------------- Modality helpers --------------------------- */
@@ -63,7 +64,7 @@ const ACCEPT =
   '.jpg,.jpeg,.png,.webp,.gif,.bmp,.heic,.pdf,.docx,.pptx,.txt,.md,.csv,.json,.srt,.vtt';
 
 export function Uploader({
-  onFiles, uploading, progress, maxMb = 500, compact,
+  onFiles, uploading, progress, maxMb: maxMbProp, compact,
 }: {
   onFiles: (files: File[]) => void;
   uploading?: boolean;
@@ -74,6 +75,10 @@ export function Uploader({
   const [dragging, setDragging] = useState(false);
   const [rejected, setRejected] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
+  // The real ceiling differs per deployment (Vercel caps request bodies), so
+  // ask the server rather than promising a size it will reject.
+  const { data: caps } = useCapabilities();
+  const maxMb = maxMbProp ?? caps?.limits?.max_upload_mb ?? 500;
 
   const handle = useCallback(
     (list: FileList | null) => {
@@ -490,8 +495,11 @@ export function PageHeader({
 }
 
 /** Explains, in place, that a feature needs configuration instead of failing silently. */
-export function CapabilityNote({ needs, mode }: { needs?: string | null; mode?: string }) {
+export function CapabilityNote({
+  needs, mode, hint,
+}: { needs?: string | null; mode?: string; hint?: string }) {
   if (!needs) return null;
+  const isKey = needs.includes('KEY');
   return (
     <div className="flex gap-2.5 rounded-lg border border-warning/30 bg-warning/[0.07] px-3.5 py-2.5">
       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
@@ -499,10 +507,13 @@ export function CapabilityNote({ needs, mode }: { needs?: string | null; mode?: 
         {mode && (
           <span className="font-semibold text-warning">Currently {mode}. </span>
         )}
-        Needs <code className="rounded bg-surface-2 px-1 font-mono text-[11px] text-warning">{needs}</code>.{' '}
-        <Link to="/app/settings" className="font-semibold text-warning hover:underline">
-          Set it up
-        </Link>
+        Needs <code className="rounded bg-surface-2 px-1 font-mono text-[11px] text-warning">{needs}</code>
+        {hint ? ` — ${hint}` : '.'}{' '}
+        {isKey && (
+          <Link to="/app/settings" className="font-semibold text-warning hover:underline">
+            Set it up
+          </Link>
+        )}
       </p>
     </div>
   );
